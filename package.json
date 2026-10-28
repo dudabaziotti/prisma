@@ -1,0 +1,40 @@
+{
+  "name": "prisma",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "start:e2e": "ng serve --configuration e2e --port 4200",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-prisma",
+    "test:e2e": "mocha",
+    "test:e2e:report": "mocha --reporter mochawesome --reporter-options reportDir=e2e/reports,reportFilename=relatorio-testes,charts=true",
+    "deploy": "ng build && firebase deploy"
+  },
+  "private": true,
+  "packageManager": "npm@10.9.9",
+  "dependencies": {
+    "@angular/common": "^22.2.0",
+    "@angular/compiler": "^22.2.0",
+    "@angular/core": "^22.2.0",
+    "@angular/forms": "^22.2.0",
+    "@angular/platform-browser": "^22.2.0",
+    "@angular/router": "^22.2.0",
+    "firebase": "^12.19.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.4",
+    "@angular/cli": "^22.2.4",
+    "@angular/compiler-cli": "^22.2.0",
+    "firebase-tools": "^15.34.1",
+    "mocha": "^12.0.3",
+    "mochawesome": "^8.1.1",
+    "prettier": "^3.8.1",
+    "selenium-webdriver": "^4.51.0",
+    "typescript": "~6.0.2"
+  }
+}
