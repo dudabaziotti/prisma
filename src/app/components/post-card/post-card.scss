@@ -1,0 +1,13 @@
+.post { display: flex; flex-direction: column; gap: 10px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.author { display: flex; gap: 10px; align-items: center; color: inherit; text-decoration: none; }
+.author strong { color: var(--dark-blue); }
+.small { font-size: 0.78rem; }
+.owner-actions { display: flex; gap: 2px; }
+.content { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.chip.subject { align-self: flex-start; }
+.confirm {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--danger-soft); color: var(--danger);
+  padding: 12px; border-radius: 8px; font-size: 0.9rem;
+}
