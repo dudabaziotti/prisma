@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// Regras de segurança do Prisma (RNF05 - LGPD).
+// - Só usuários autenticados leem perfis e publicações.
+// - Cada usuário só altera ou exclui o próprio perfil.
+// - Só o autor edita ou exclui a própria publicação (regra de negócio do DRE).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function validProfile(data) {
+      return data.name is string && data.name.size() >= 2 && data.name.size() <= 60
+        && data.bio is string && data.bio.size() <= 300
+        && data.interests is list && data.interests.size() <= 10
+        && data.avatar is string;
+    }
+
+    function validPost(data) {
+      return data.content is string && data.content.size() > 0 && data.content.size() <= 2000
+        && data.subject is string && data.subject.size() <= 60
+        && data.hashtags is list && data.hashtags.size() <= 20;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid) && validProfile(request.resource.data);
+      allow delete: if isOwner(uid);
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && validPost(request.resource.data);
+      allow update: if isOwner(resource.data.authorId)
+        && request.resource.data.authorId == resource.data.authorId
+        && validPost(request.resource.data);
+      allow delete: if isOwner(resource.data.authorId);
+    }
+  }
+}
