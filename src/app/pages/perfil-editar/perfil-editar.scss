@@ -1,0 +1,22 @@
+.avatars {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  legend { font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; }
+}
+.avatar-option {
+  cursor: pointer;
+  border-radius: 50%;
+  padding: 3px;
+  border: 2px solid transparent;
+  input { position: absolute; opacity: 0; pointer-events: none; }
+  img { width: 48px; height: 48px; display: block; border-radius: 50%; background: var(--blue-soft); }
+  &.selected { border-color: var(--blue); }
+  &:focus-within { outline: 2px solid var(--blue); }
+}
+.danger-zone { border-color: #f3c4bf; }
+.danger-zone .muted { margin-top: 0; }
+.danger-btn { color: var(--danger); border-color: #f3c4bf; }

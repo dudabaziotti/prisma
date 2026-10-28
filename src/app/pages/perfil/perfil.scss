@@ -1,0 +1,11 @@
+.profile { display: flex; gap: 20px; align-items: flex-start; position: relative; }
+.info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.info p { margin: 0; }
+.bio { white-space: pre-wrap; }
+.edit { position: absolute; top: 16px; right: 16px; text-decoration: none; }
+.section-title { font-size: 1.05rem; margin-top: 8px; }
+@media (max-width: 600px) {
+  .profile { flex-direction: column; align-items: center; text-align: center; }
+  .edit { position: static; }
+  .chips { justify-content: center; }
+}
