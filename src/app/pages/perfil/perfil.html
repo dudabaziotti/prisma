@@ -24,6 +24,15 @@
         <a class="btn btn-ghost edit" routerLink="/perfil/editar" data-test="perfil-editar">Editar perfil</a>
       }
     </section>
+
+    <h2 class="section-title">Publicações</h2>
+    @if (posts(); as list) {
+      @for (post of list; track post.id) {
+        <app-post-card [post]="post" />
+      } @empty {
+        <p class="empty" data-test="perfil-sem-publicacoes">Nenhuma publicação ainda.</p>
+      }
+    }
   } @else if (notFound()) {
     <p class="empty" data-test="perfil-nao-encontrado">Perfil não encontrado.</p>
   } @else {

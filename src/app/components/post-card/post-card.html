@@ -6,20 +6,63 @@
         <strong data-test="publicacao-autor">{{ post().authorName }}</strong>
         <div class="muted small" data-test="publicacao-data">
           {{ post().createdAt | date: "dd/MM/yyyy 'às' HH:mm" }}
+          @if (post().updatedAt) {
+            <span data-test="publicacao-editada"> · editado</span>
+          }
         </div>
       </div>
     </a>
+
+    @if (isAuthor() && !editing()) {
+      <div class="owner-actions">
+        <button class="btn btn-link" type="button" (click)="editing.set(true); confirmingDelete.set(false)" data-test="publicacao-editar">
+          Editar
+        </button>
+        <button class="btn btn-link danger" type="button" (click)="confirmingDelete.set(true)" data-test="publicacao-excluir">
+          Excluir
+        </button>
+      </div>
+    }
   </header>
 
-  @if (post().subject) {
-    <span class="chip subject" data-test="publicacao-disciplina">{{ post().subject }}</span>
+  @if (editing()) {
+    <app-post-form
+      [initial]="{ content: post().content, subject: post().subject }"
+      [save]="saveEdit"
+      submitLabel="Salvar alterações"
+      [showCancel]="true"
+      testPrefix="edicao"
+      (cancel)="editing.set(false)"
+    />
+  } @else {
+    @if (post().subject) {
+      <span class="chip subject" data-test="publicacao-disciplina">{{ post().subject }}</span>
+    }
+    <p class="content" data-test="publicacao-conteudo">{{ post().content }}</p>
+    @if (post().hashtags.length) {
+      <div class="chips">
+        @for (tag of post().hashtags; track tag) {
+          <span class="chip" data-test="publicacao-hashtag">#{{ tag }}</span>
+        }
+      </div>
+    }
   }
-  <p class="content" data-test="publicacao-conteudo">{{ post().content }}</p>
-  @if (post().hashtags.length) {
-    <div class="chips">
-      @for (tag of post().hashtags; track tag) {
-        <span class="chip" data-test="publicacao-hashtag">#{{ tag }}</span>
-      }
+
+  @if (confirmingDelete()) {
+    <div class="confirm" data-test="confirmar-exclusao">
+      <span>Excluir esta publicação? Essa ação não pode ser desfeita.</span>
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" (click)="confirmingDelete.set(false)" data-test="exclusao-cancelar">
+          Cancelar
+        </button>
+        <button class="btn btn-danger" type="button" [disabled]="deleting()" (click)="remove()" data-test="exclusao-confirmar">
+          {{ deleting() ? 'Excluindo...' : 'Excluir' }}
+        </button>
+      </div>
     </div>
+  }
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
   }
 </article>
