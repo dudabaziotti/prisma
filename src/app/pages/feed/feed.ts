@@ -1,12 +1,27 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AuthService } from '../../core/auth.service';
+import { PostInput } from '../../core/models';
+import { PostService } from '../../core/post.service';
+import { PostCard } from '../../components/post-card/post-card';
+import { PostForm } from '../../components/post-form/post-form';
 
-/** Página provisória: o feed de publicações entra no CRUD de Publicação. */
 @Component({
   selector: 'app-feed',
-  template: `
-    <main class="page">
-      <p class="empty">O feed de publicações chega na próxima entrega.</p>
-    </main>
-  `,
+  imports: [PostCard, PostForm],
+  templateUrl: './feed.html',
 })
-export class FeedPage {}
+export class FeedPage {
+  private readonly auth = inject(AuthService);
+  private readonly postService = inject(PostService);
+
+  readonly profile = this.auth.profile;
+  /** `undefined` enquanto o feed carrega. */
+  readonly posts = toSignal(this.postService.watchFeed());
+
+  readonly create = async (value: PostInput): Promise<void> => {
+    const author = this.profile();
+    if (!author) throw { code: 'unavailable' };
+    await this.postService.create(author, value);
+  };
+}

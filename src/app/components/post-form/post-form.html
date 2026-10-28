@@ -1,0 +1,52 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <label class="field">
+    <span class="sr-only">Texto da publicação</span>
+    <textarea
+      formControlName="content"
+      rows="3"
+      [attr.maxlength]="max"
+      [placeholder]="placeholder()"
+      [attr.data-test]="testPrefix() + '-conteudo'"
+    ></textarea>
+    <small class="hint">Use #hashtags para categorizar. {{ length() }}/{{ max }}</small>
+  </label>
+
+  <div class="row">
+    <label class="field subject">
+      <span>Disciplina (opcional)</span>
+      <input
+        type="text"
+        formControlName="subject"
+        maxlength="60"
+        [attr.list]="listId"
+        placeholder="Ex.: Cálculo"
+        [attr.data-test]="testPrefix() + '-disciplina'"
+      />
+      <datalist [id]="listId">
+        @for (s of subjects; track s) {
+          <option [value]="s"></option>
+        }
+      </datalist>
+    </label>
+
+    <div class="actions">
+      @if (showCancel()) {
+        <button class="btn btn-ghost" type="button" (click)="cancel.emit()" [attr.data-test]="testPrefix() + '-cancelar'">
+          Cancelar
+        </button>
+      }
+      <button
+        class="btn btn-primary"
+        type="submit"
+        [disabled]="!canSubmit() || busy() || disabled()"
+        [attr.data-test]="testPrefix() + '-salvar'"
+      >
+        {{ busy() ? 'Salvando...' : submitLabel() }}
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert" [attr.data-test]="testPrefix() + '-erro'">{{ error() }}</p>
+  }
+</form>

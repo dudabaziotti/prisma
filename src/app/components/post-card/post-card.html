@@ -1,0 +1,25 @@
+<article class="card post" data-test="publicacao" [attr.data-post-id]="post().id">
+  <header>
+    <a [routerLink]="['/perfil', post().authorId]" class="author">
+      <img class="avatar" [src]="avatar()" alt="" />
+      <div>
+        <strong data-test="publicacao-autor">{{ post().authorName }}</strong>
+        <div class="muted small" data-test="publicacao-data">
+          {{ post().createdAt | date: "dd/MM/yyyy 'às' HH:mm" }}
+        </div>
+      </div>
+    </a>
+  </header>
+
+  @if (post().subject) {
+    <span class="chip subject" data-test="publicacao-disciplina">{{ post().subject }}</span>
+  }
+  <p class="content" data-test="publicacao-conteudo">{{ post().content }}</p>
+  @if (post().hashtags.length) {
+    <div class="chips">
+      @for (tag of post().hashtags; track tag) {
+        <span class="chip" data-test="publicacao-hashtag">#{{ tag }}</span>
+      }
+    </div>
+  }
+</article>

@@ -1,0 +1,16 @@
+<main class="page">
+  <section class="card">
+    <h2 class="title">O que você está estudando hoje?</h2>
+    <app-post-form [save]="create" [disabled]="!profile()" testPrefix="nova-publicacao" />
+  </section>
+
+  @if (posts(); as list) {
+    @for (post of list; track post.id) {
+      <app-post-card [post]="post" />
+    } @empty {
+      <p class="empty" data-test="feed-vazio">Ainda não há publicações. Que tal ser o primeiro?</p>
+    }
+  } @else {
+    <p class="empty">Carregando publicações...</p>
+  }
+</main>
