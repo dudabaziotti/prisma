@@ -60,3 +60,5 @@ src/environments/environment.ts
 
 # Relatórios dos testes Selenium
 e2e/reports/
+
+e2e/README.md
