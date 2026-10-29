@@ -4,7 +4,7 @@ const MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'E-mail inválido.',
   'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.',
   'auth/invalid-credential': 'E-mail ou senha incorretos.',
-  'auth/wrong-password': 'Senha incorreta.',
+  'auth/wrong-password': 'E-mail ou senha incorretos.',
   'auth/user-not-found': 'E-mail ou senha incorretos.',
   'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
   'auth/network-request-failed': 'Falha de conexão. Verifique sua internet.',
