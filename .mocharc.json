@@ -1,0 +1,6 @@
+{
+  "spec": ["e2e/**/*.spec.js"],
+  "require": ["e2e/support/hooks.js"],
+  "timeout": 60000,
+  "slow": 8000
+}

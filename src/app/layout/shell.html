@@ -1,0 +1,23 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <a routerLink="/feed" class="brand" aria-label="Prisma - página inicial">
+      <img src="prisma-icon.png" alt="" />
+      <span>Prisma</span>
+    </a>
+
+    <nav>
+      <a routerLink="/feed" routerLinkActive="active" data-test="nav-feed">Feed</a>
+      <a routerLink="/perfil" routerLinkActive="active" data-test="nav-perfil">Meu perfil</a>
+    </nav>
+
+    <div class="me">
+      @if (profile(); as p) {
+        <img class="avatar sm" [src]="avatar()" alt="" />
+        <span class="me-name" data-test="usuario-logado">{{ p.name }}</span>
+      }
+      <button class="btn btn-ghost" type="button" (click)="logout()" data-test="sair">Sair</button>
+    </div>
+  </div>
+</header>
+
+<router-outlet />

@@ -1,4 +1,4 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
 
 # Compiled output
 /dist
@@ -47,5 +47,16 @@ Thumbs.db
 .firebase/
 *-debug.log
 
-# Relatórios e prints gerados pelos testes Selenium
+
+# Dependências e arquivos gerados
+/node_modules
+/dist
+/.angular
+
+# Configuração privada do Firebase
+src/environments/environment.ts
+.firebaserc
+
+
+# Relatórios dos testes Selenium
 e2e/reports/

@@ -1,0 +1,41 @@
+<main class="page">
+  @if (profile(); as p) {
+    <section class="card profile" data-test="perfil">
+      <img class="avatar lg" [src]="avatar()" alt="Avatar de {{ p.name }}" data-test="perfil-avatar" [attr.data-avatar]="p.avatar" />
+      <div class="info">
+        <h1 data-test="perfil-nome">{{ p.name }}</h1>
+        @if (p.createdAt) {
+          <p class="muted">No Prisma desde {{ p.createdAt | date: 'MMMM yyyy' }}</p>
+        }
+        @if (p.bio) {
+          <p class="bio" data-test="perfil-bio">{{ p.bio }}</p>
+        } @else if (isOwn()) {
+          <p class="muted">Você ainda não escreveu uma biografia.</p>
+        }
+        @if (p.interests.length) {
+          <div class="chips" data-test="perfil-interesses">
+            @for (i of p.interests; track i) {
+              <span class="chip" data-test="perfil-interesse">{{ i }}</span>
+            }
+          </div>
+        }
+      </div>
+      @if (isOwn()) {
+        <a class="btn btn-ghost edit" routerLink="/perfil/editar" data-test="perfil-editar">Editar perfil</a>
+      }
+    </section>
+
+    <h2 class="section-title">Publicações</h2>
+    @if (posts(); as list) {
+      @for (post of list; track post.id) {
+        <app-post-card [post]="post" />
+      } @empty {
+        <p class="empty" data-test="perfil-sem-publicacoes">Nenhuma publicação ainda.</p>
+      }
+    }
+  } @else if (notFound()) {
+    <p class="empty" data-test="perfil-nao-encontrado">Perfil não encontrado.</p>
+  } @else {
+    <p class="empty">Carregando perfil...</p>
+  }
+</main>

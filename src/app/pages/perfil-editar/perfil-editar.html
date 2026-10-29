@@ -1,0 +1,81 @@
+<main class="page">
+  <section class="card">
+    <h1 class="title">Editar perfil</h1>
+
+    @if (profile()) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <fieldset class="avatars">
+          <legend>Avatar</legend>
+          @for (a of avatars; track a) {
+            <label class="avatar-option" [class.selected]="form.controls.avatar.value === a">
+              <input type="radio" formControlName="avatar" [value]="a" [attr.data-test]="'avatar-' + a" />
+              <img [src]="avatarUrl(a)" [alt]="a" />
+            </label>
+          }
+        </fieldset>
+
+        <label class="field" [class.invalid]="submitted() && form.controls.name.invalid">
+          <span>Nome</span>
+          <input type="text" formControlName="name" data-test="editar-nome" />
+          @if (submitted() && form.controls.name.invalid) {
+            <small class="field-error" data-test="erro-editar-nome">Informe seu nome (2 a 60 caracteres).</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>Biografia</span>
+          <textarea formControlName="bio" rows="3" maxlength="300" placeholder="Conte um pouco sobre você e o que estuda" data-test="editar-bio"></textarea>
+          <small class="hint">{{ form.controls.bio.value.length }}/300</small>
+        </label>
+
+        <label class="field">
+          <span>Interesses acadêmicos</span>
+          <input type="text" formControlName="interests" placeholder="Ex.: Cálculo, Programação, Física" data-test="editar-interesses" />
+          <small class="hint">Separe por vírgulas (até 10).</small>
+        </label>
+
+        @if (error()) {
+          <p class="error" role="alert" data-test="editar-erro">{{ error() }}</p>
+        }
+
+        <div class="actions">
+          <a class="btn btn-ghost" routerLink="/perfil" data-test="editar-cancelar">Cancelar</a>
+          <button class="btn btn-primary" type="submit" [disabled]="saving()" data-test="editar-salvar">
+            {{ saving() ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <p class="empty">Carregando perfil...</p>
+    }
+  </section>
+
+  <section class="card danger-zone">
+    <h2 class="title">Excluir conta</h2>
+    <p class="muted">
+      Remove permanentemente seu perfil e todas as suas publicações. Essa ação não pode ser desfeita.
+    </p>
+
+    @if (!confirmingDelete()) {
+      <button class="btn btn-ghost danger-btn" type="button" (click)="confirmingDelete.set(true)" data-test="excluir-conta">
+        Excluir minha conta
+      </button>
+    } @else {
+      <form [formGroup]="deleteForm" (ngSubmit)="deleteAccount()" novalidate>
+        <label class="field">
+          <span>Digite sua senha para confirmar</span>
+          <input type="password" formControlName="password" autocomplete="current-password" data-test="excluir-conta-senha" />
+        </label>
+        @if (deleteError()) {
+          <p class="error" role="alert" data-test="excluir-conta-erro">{{ deleteError() }}</p>
+        }
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" (click)="cancelDelete()" data-test="excluir-conta-cancelar">Cancelar</button>
+          <button class="btn btn-danger" type="submit" [disabled]="deleting()" data-test="excluir-conta-confirmar">
+            {{ deleting() ? 'Excluindo...' : 'Excluir definitivamente' }}
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+</main>
