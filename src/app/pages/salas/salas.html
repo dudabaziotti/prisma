@@ -1,0 +1,52 @@
+<main class="page">
+  <section class="card">
+    <h1 class="title">Salas de foco</h1>
+    <p class="muted intro">
+      Estude junto com outras pessoas no método Pomodoro: 25 minutos de foco e 5 de pausa, por 4 ciclos.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="create()" class="create" novalidate>
+      <label class="field">
+        <span>Nome da sala</span>
+        <input type="text" formControlName="name" maxlength="60" placeholder="Ex.: Revisão para a P2" data-test="sala-nova-nome" />
+      </label>
+      <label class="field">
+        <span>Disciplina (opcional)</span>
+        <input type="text" formControlName="subject" maxlength="60" list="salas-disciplinas" placeholder="Ex.: Cálculo" data-test="sala-nova-disciplina" />
+        <datalist id="salas-disciplinas">
+          @for (s of subjects; track s) {
+            <option [value]="s"></option>
+          }
+        </datalist>
+      </label>
+      <button class="btn btn-primary" type="submit" [disabled]="!canCreate() || creating() || !profile()" data-test="sala-nova-criar">
+        {{ creating() ? 'Criando...' : 'Criar sala' }}
+      </button>
+    </form>
+    @if (error()) {
+      <p class="error" role="alert" data-test="sala-nova-erro">{{ error() }}</p>
+    }
+  </section>
+
+  @if (rooms(); as list) {
+    @for (room of list; track room.id) {
+      <article class="card room" data-test="sala-card" [attr.data-room-id]="room.id">
+        <div class="info">
+          <h2 data-test="sala-card-nome">{{ room.name }}</h2>
+          <div class="chips">
+            @if (room.subject) {
+              <span class="chip subject" data-test="sala-card-disciplina">{{ room.subject }}</span>
+            }
+            <span class="chip" [class.live]="room.timer.status === 'running'">{{ status(room) }}</span>
+          </div>
+          <p class="muted small">Criada por {{ room.ownerName }}</p>
+        </div>
+        <a class="btn btn-primary" [routerLink]="['/salas', room.id]" data-test="sala-entrar">Entrar</a>
+      </article>
+    } @empty {
+      <p class="empty" data-test="salas-vazio">Nenhuma sala aberta. Crie a primeira!</p>
+    }
+  } @else {
+    <p class="empty">Carregando salas...</p>
+  }
+</main>

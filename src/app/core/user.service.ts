@@ -4,6 +4,7 @@ import {
   DocumentData,
   Timestamp,
   collection,
+  collectionGroup,
   doc,
   getDoc,
   getDocs,
@@ -11,9 +12,9 @@ import {
   serverTimestamp,
   updateDoc,
   where,
-  writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { updateRefs } from './firestore-utils';
 import { ProfileChanges, UserProfile } from './models';
 
 export function toDate(value: unknown): Date | null {
@@ -47,14 +48,13 @@ export class UserService {
       await updateProfile(auth.currentUser, { displayName: changes.name });
     }
 
-    // As publicações guardam nome e avatar do autor; atualiza para refletir o novo perfil.
+    // Publicações, comentários e salas guardam o nome do autor; atualiza para refletir o novo perfil.
+    const author = { authorName: changes.name, authorAvatar: changes.avatar };
     const posts = await getDocs(query(collection(db, 'posts'), where('authorId', '==', uid)));
-    for (let i = 0; i < posts.docs.length; i += 400) {
-      const batch = writeBatch(db);
-      posts.docs.slice(i, i + 400).forEach((d) =>
-        batch.update(d.ref, { authorName: changes.name, authorAvatar: changes.avatar }),
-      );
-      await batch.commit();
-    }
+    await updateRefs(posts.docs.map((d) => d.ref), author);
+    const comments = await getDocs(query(collectionGroup(db, 'comments'), where('authorId', '==', uid)));
+    await updateRefs(comments.docs.map((d) => d.ref), author);
+    const rooms = await getDocs(query(collection(db, 'rooms'), where('ownerId', '==', uid)));
+    await updateRefs(rooms.docs.map((d) => d.ref), { ownerName: changes.name });
   }
 }

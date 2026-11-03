@@ -5,12 +5,13 @@ import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/firebase-errors';
 import { Post, PostInput, avatarUrl } from '../../core/models';
 import { PostService } from '../../core/post.service';
+import { Comments } from '../comments/comments';
 import { PostForm } from '../post-form/post-form';
 
 /** Exibe uma publicação. O autor pode editá-la ou excluí-la. */
 @Component({
   selector: 'app-post-card',
-  imports: [DatePipe, RouterLink, PostForm],
+  imports: [DatePipe, RouterLink, PostForm, Comments],
   templateUrl: './post-card.html',
   styleUrl: './post-card.scss',
 })
@@ -25,6 +26,7 @@ export class PostCard {
   readonly editing = signal(false);
   readonly confirmingDelete = signal(false);
   readonly deleting = signal(false);
+  readonly showComments = signal(false);
   readonly error = signal('');
 
   readonly saveEdit = async (value: PostInput): Promise<void> => {

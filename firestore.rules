@@ -4,6 +4,8 @@ rules_version = '2';
 // - Só usuários autenticados leem perfis e publicações.
 // - Cada usuário só altera ou exclui o próprio perfil.
 // - Só o autor edita ou exclui a própria publicação (regra de negócio do DRE).
+// - Só o autor edita o próprio comentário; o autor do comentário ou da publicação pode excluí-lo.
+// - Só quem criou a sala de foco edita, exclui e controla o cronômetro; cada um entra e sai por si.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -28,6 +30,27 @@ service cloud.firestore {
         && data.hashtags is list && data.hashtags.size() <= 20;
     }
 
+    function validComment(data) {
+      return data.content is string && data.content.size() > 0 && data.content.size() <= 1000
+        && (data.parentId == null || data.parentId is string);
+    }
+
+    function postAuthor(postId) {
+      return get(/databases/$(database)/documents/posts/$(postId)).data.authorId;
+    }
+
+    function validRoom(data) {
+      return data.name is string && data.name.size() >= 2 && data.name.size() <= 60
+        && data.subject is string && data.subject.size() <= 60
+        && data.timer is map
+        && data.timer.status in ['idle', 'running', 'paused']
+        && data.timer.elapsedMs is number && data.timer.elapsedMs >= 0;
+    }
+
+    function roomOwner(roomId) {
+      return get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerId;
+    }
+
     match /users/{uid} {
       allow read: if signedIn();
       allow create, update: if isOwner(uid) && validProfile(request.resource.data);
@@ -43,6 +66,48 @@ service cloud.firestore {
         && request.resource.data.authorId == resource.data.authorId
         && validPost(request.resource.data);
       allow delete: if isOwner(resource.data.authorId);
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.authorId == request.auth.uid
+          && validComment(request.resource.data)
+          && exists(/databases/$(database)/documents/posts/$(postId));
+        allow update: if isOwner(resource.data.authorId)
+          && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.parentId == resource.data.parentId
+          && validComment(request.resource.data);
+        allow delete: if isOwner(resource.data.authorId) || isOwner(postAuthor(postId));
+      }
+    }
+
+    // Consultas em todos os comentários (exclusão de conta e troca de nome no perfil).
+    match /{path=**}/comments/{commentId} {
+      allow read: if signedIn();
+    }
+
+    match /rooms/{roomId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && validRoom(request.resource.data);
+      allow update: if isOwner(resource.data.ownerId)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && validRoom(request.resource.data);
+      allow delete: if isOwner(resource.data.ownerId);
+
+      match /participants/{uid} {
+        allow read: if signedIn();
+        allow create, update: if isOwner(uid)
+          && request.resource.data.uid == uid
+          && exists(/databases/$(database)/documents/rooms/$(roomId));
+        allow delete: if isOwner(uid) || isOwner(roomOwner(roomId));
+      }
+    }
+
+    // Consultas em todas as participações (exclusão de conta).
+    match /{path=**}/participants/{uid} {
+      allow read: if signedIn();
     }
   }
 }

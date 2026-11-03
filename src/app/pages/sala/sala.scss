@@ -1,0 +1,25 @@
+.back { font-size: 0.9rem; }
+.title-row { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+h1 { font-size: 1.4rem; margin-bottom: 6px; }
+.small { font-size: 0.8rem; }
+.header p { margin: 6px 0 0; }
+.actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.grid { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; }
+.timer { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.timer p { margin: 0; }
+.phase { font-weight: 600; font-size: 1.1rem; color: var(--dark-blue); }
+.clock { font-size: 3.6rem; font-weight: 600; letter-spacing: 2px; color: var(--dark-blue); font-variant-numeric: tabular-nums; }
+.timer[data-phase='focus'] { border-color: var(--blue); }
+.timer[data-phase='focus'] .clock { color: var(--blue); }
+.timer[data-phase='break'] { border-color: #2e9d6a; }
+.timer[data-phase='break'] .clock, .timer[data-phase='break'] .phase { color: var(--success); }
+.controls { display: flex; gap: 8px; margin-top: 8px; }
+.people ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.people li { display: flex; align-items: center; gap: 8px; }
+.confirm {
+  display: flex; flex-direction: column; gap: 10px; margin-top: 12px;
+  background: var(--danger-soft); color: var(--danger); padding: 12px; border-radius: 8px; font-size: 0.9rem;
+}
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+}
