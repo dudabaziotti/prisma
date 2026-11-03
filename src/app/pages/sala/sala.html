@@ -1,0 +1,114 @@
+<main class="page">
+  <a routerLink="/salas" class="back" data-test="sala-voltar">← Todas as salas</a>
+
+  @if (room(); as r) {
+    <section class="card header">
+      @if (!editing()) {
+        <div class="title-row">
+          <div>
+            <h1 data-test="sala-nome">{{ r.name }}</h1>
+            <div class="chips">
+              @if (r.subject) {
+                <span class="chip subject" data-test="sala-disciplina">{{ r.subject }}</span>
+              }
+            </div>
+            <p class="muted small">Criada por <span data-test="sala-dono">{{ r.ownerName }}</span></p>
+          </div>
+          <div class="actions">
+            @if (isOwner()) {
+              <button class="btn btn-link" type="button" (click)="startEdit()" data-test="sala-editar">Editar</button>
+              <button class="btn btn-link danger" type="button" (click)="confirmingDelete.set(true); editing.set(false)" data-test="sala-excluir">
+                Excluir
+              </button>
+            }
+            <button class="btn btn-ghost" type="button" (click)="exit()" data-test="sala-sair">Sair da sala</button>
+          </div>
+        </div>
+      } @else {
+        <form [formGroup]="editForm" (ngSubmit)="saveEdit()" novalidate>
+          <label class="field">
+            <span>Nome da sala</span>
+            <input type="text" formControlName="name" maxlength="60" data-test="sala-edicao-nome" />
+          </label>
+          <label class="field">
+            <span>Disciplina (opcional)</span>
+            <input type="text" formControlName="subject" maxlength="60" data-test="sala-edicao-disciplina" />
+          </label>
+          <div class="actions">
+            <button class="btn btn-ghost" type="button" (click)="editing.set(false)" data-test="sala-edicao-cancelar">Cancelar</button>
+            <button class="btn btn-primary" type="submit" [disabled]="editForm.invalid || busy()" data-test="sala-edicao-salvar">Salvar</button>
+          </div>
+        </form>
+      }
+
+      @if (confirmingDelete()) {
+        <div class="confirm" data-test="sala-confirmar-exclusao">
+          <span>Excluir esta sala? Todos os participantes serão desconectados.</span>
+          <div class="actions">
+            <button class="btn btn-ghost" type="button" (click)="confirmingDelete.set(false)" data-test="sala-exclusao-cancelar">Cancelar</button>
+            <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="remove()" data-test="sala-exclusao-confirmar">Excluir</button>
+          </div>
+        </div>
+      }
+    </section>
+
+    @if (full()) {
+      <p class="error" role="alert" data-test="sala-cheia">Esta sala já tem {{ max }} participantes. Tente outra sala.</p>
+    }
+
+    <div class="grid">
+      <section class="card timer" [attr.data-phase]="timer()?.phase" data-test="timer">
+        <p class="phase" data-test="timer-fase">{{ phaseLabel() }}</p>
+        <p class="clock" data-test="timer-tempo">{{ clock() }}</p>
+        <p class="muted" data-test="timer-ciclo">Ciclo {{ timer()?.cycle }} de 4</p>
+
+        @if (isOwner()) {
+          <div class="controls">
+            @switch (r.timer.status) {
+              @case ('idle') {
+                <button class="btn btn-primary" type="button" (click)="start()" [disabled]="busy()" data-test="timer-iniciar">Iniciar</button>
+              }
+              @case ('running') {
+                @if (timer()?.phase !== 'finished') {
+                  <button class="btn btn-primary" type="button" (click)="pause()" [disabled]="busy()" data-test="timer-pausar">Pausar</button>
+                }
+                <button class="btn btn-ghost" type="button" (click)="reset()" [disabled]="busy()" data-test="timer-reiniciar">Reiniciar</button>
+              }
+              @case ('paused') {
+                <button class="btn btn-primary" type="button" (click)="resume()" [disabled]="busy()" data-test="timer-retomar">Retomar</button>
+                <button class="btn btn-ghost" type="button" (click)="reset()" [disabled]="busy()" data-test="timer-reiniciar">Reiniciar</button>
+              }
+            }
+          </div>
+        } @else {
+          <p class="muted small">O cronômetro é controlado por quem criou a sala.</p>
+        }
+      </section>
+
+      <section class="card people">
+        <h2 class="title">
+          Participantes <span class="muted" data-test="participantes-contagem">{{ participants().length }}/{{ max }}</span>
+        </h2>
+        <ul>
+          @for (p of participants(); track p.uid) {
+            <li data-test="participante" [attr.data-uid]="p.uid">
+              <img class="avatar sm" [src]="avatarUrl(p.avatar)" alt="" />
+              <span data-test="participante-nome">{{ p.name }}</span>
+              @if (p.uid === r.ownerId) {
+                <span class="chip">dono</span>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    </div>
+
+    @if (error()) {
+      <p class="error" role="alert" data-test="sala-erro">{{ error() }}</p>
+    }
+  } @else if (room() === null) {
+    <p class="empty" data-test="sala-excluida">Esta sala não existe mais. <a routerLink="/salas">Ver outras salas</a></p>
+  } @else {
+    <p class="empty">Carregando sala...</p>
+  }
+</main>
