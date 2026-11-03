@@ -11,8 +11,11 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import {
+  CollectionReference,
+  Query,
   Unsubscribe,
   collection,
+  collectionGroup,
   doc,
   getDocs,
   onSnapshot,
@@ -20,9 +23,9 @@ import {
   serverTimestamp,
   setDoc,
   where,
-  writeBatch,
 } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { deleteRefs } from './firestore-utils';
 import { DEFAULT_AVATAR, UserProfile } from './models';
 import { toProfile } from './user.service';
 
@@ -90,13 +93,27 @@ export class AuthService {
 
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
 
-    const posts = await getDocs(query(collection(db, 'posts'), where('authorId', '==', user.uid)));
-    const refs = [...posts.docs.map((d) => d.ref), doc(db, 'users', user.uid)];
-    for (let i = 0; i < refs.length; i += 400) {
-      const batch = writeBatch(db);
-      refs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
-      await batch.commit();
+    const uid = user.uid;
+    const refsOf = async (q: Query | CollectionReference) => (await getDocs(q)).docs.map((d) => d.ref);
+
+    // A ordem importa: as regras do Firestore conferem o dono de cada documento.
+    // 1. Comentários do usuário em qualquer publicação.
+    await deleteRefs(await refsOf(query(collectionGroup(db, 'comments'), where('authorId', '==', uid))));
+    // 2. Publicações do usuário, cada uma com os comentários de outras pessoas.
+    const posts = await refsOf(query(collection(db, 'posts'), where('authorId', '==', uid)));
+    for (const post of posts) {
+      await deleteRefs(await refsOf(collection(post, 'comments')));
     }
+    await deleteRefs(posts);
+    // 3. Presença em salas de foco e salas criadas pelo usuário (com os participantes).
+    await deleteRefs(await refsOf(query(collectionGroup(db, 'participants'), where('uid', '==', uid))));
+    const rooms = await refsOf(query(collection(db, 'rooms'), where('ownerId', '==', uid)));
+    for (const room of rooms) {
+      await deleteRefs(await refsOf(collection(room, 'participants')));
+    }
+    await deleteRefs(rooms);
+    // 4. Perfil.
+    await deleteRefs([doc(db, 'users', uid)]);
 
     this.listenToProfile(null);
     await deleteUser(user);
