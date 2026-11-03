@@ -65,10 +65,11 @@ export class Comments {
     return t.length > 0 && t.length <= MAX_COMMENT_LENGTH;
   }
 
-  async send(): Promise<void> {
+    async send(): Promise<void> {
     await this.run(async () => {
-      await this.service.create(this.postId(), this.author(), this.draft());
-      this.draft.set('');
+      const text = this.draft();
+      await this.service.create(this.postId(), this.author(), text);
+      if (this.draft() === text) this.draft.set('');
     }, this.sending);
   }
 

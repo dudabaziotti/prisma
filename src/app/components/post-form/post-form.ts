@@ -48,13 +48,15 @@ export class PostForm implements OnInit {
     if (initial) this.form.setValue({ content: initial.content, subject: initial.subject });
   }
 
-  async submit(): Promise<void> {
+    async submit(): Promise<void> {
     if (!this.canSubmit() || this.busy() || this.disabled()) return;
     this.busy.set(true);
     this.error.set('');
+    const sent = this.form.getRawValue();
     try {
-      await this.save()(this.form.getRawValue());
-      if (!this.initial()) this.form.reset();
+      await this.save()(sent);
+      const current = this.form.getRawValue();
+      if (!this.initial() && current.content === sent.content && current.subject === sent.subject) this.form.reset();
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {
