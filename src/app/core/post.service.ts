@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   Query,
   addDoc,
@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { Observable } from 'rxjs';
 import { db } from './firebase';
+import { CommentService } from './comment.service';
 import { Post, PostInput, UserProfile, extractHashtags } from './models';
 import { toDate } from './user.service';
 
@@ -22,6 +23,7 @@ import { toDate } from './user.service';
 @Injectable({ providedIn: 'root' })
 export class PostService {
   private readonly posts = collection(db, 'posts');
+  private readonly comments = inject(CommentService);
 
   /** Feed em ordem cronológica, da mais recente para a mais antiga (RF06). */
   watchFeed(): Observable<Post[]> {
@@ -55,6 +57,7 @@ export class PostService {
   }
 
   async remove(id: string): Promise<void> {
+    await this.comments.removeAll(id);
     await deleteDoc(doc(this.posts, id));
   }
 

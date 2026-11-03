@@ -1,0 +1,117 @@
+<section class="comments" data-test="comentarios">
+  @if (comments() === undefined) {
+    <p class="muted small">Carregando comentários...</p>
+  }
+
+  @for (thread of threads(); track thread.comment.id) {
+    <ng-container *ngTemplateOutlet="item; context: { $implicit: thread.comment, reply: false }" />
+    @for (reply of thread.replies; track reply.id) {
+      <ng-container *ngTemplateOutlet="item; context: { $implicit: reply, reply: true }" />
+    }
+    @if (replyingTo() === thread.comment.id) {
+      <form class="reply-form" (ngSubmit)="sendReply(thread.comment)">
+        <textarea
+          rows="2"
+          [ngModel]="replyDraft()"
+          (ngModelChange)="replyDraft.set($event)"
+          name="reply"
+          [attr.maxlength]="max"
+          placeholder="Escreva uma resposta..."
+          data-test="resposta-conteudo"
+        ></textarea>
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" (click)="cancelAll()" data-test="resposta-cancelar">Cancelar</button>
+          <button class="btn btn-primary" type="submit" [disabled]="!valid(replyDraft()) || busy()" data-test="resposta-enviar">
+            Responder
+          </button>
+        </div>
+      </form>
+    }
+  } @empty {
+    @if (comments() !== undefined) {
+      <p class="muted small" data-test="sem-comentarios">Nenhum comentário ainda.</p>
+    }
+  }
+
+  <ng-template #item let-c let-reply="reply">
+    <div class="comment" [class.reply]="reply" data-test="comentario" [attr.data-comment-id]="c.id" [attr.data-reply]="reply">
+      <a [routerLink]="['/perfil', c.authorId]"><img class="avatar sm" [src]="avatarUrl(c.authorAvatar)" alt="" /></a>
+      <div class="bubble">
+        <div class="meta">
+          <a [routerLink]="['/perfil', c.authorId]" class="author" data-test="comentario-autor">{{ c.authorName }}</a>
+          <span class="muted small">
+            {{ c.createdAt | date: "dd/MM/yyyy 'às' HH:mm" }}
+            @if (c.updatedAt) {
+              <span data-test="comentario-editado"> · editado</span>
+            }
+          </span>
+        </div>
+
+        @if (editingId() === c.id) {
+          <form (ngSubmit)="saveEdit(c)">
+            <textarea
+              rows="2"
+              [ngModel]="editDraft()"
+              (ngModelChange)="editDraft.set($event)"
+              name="edit"
+              [attr.maxlength]="max"
+              data-test="comentario-edicao-conteudo"
+            ></textarea>
+            <div class="actions">
+              <button class="btn btn-ghost" type="button" (click)="cancelAll()" data-test="comentario-edicao-cancelar">Cancelar</button>
+              <button class="btn btn-primary" type="submit" [disabled]="!valid(editDraft()) || busy()" data-test="comentario-edicao-salvar">
+                Salvar
+              </button>
+            </div>
+          </form>
+        } @else {
+          <p class="content" data-test="comentario-conteudo">{{ c.content }}</p>
+          <div class="links">
+            @if (!reply) {
+              <button class="btn btn-link" type="button" (click)="startReply(c)" data-test="comentario-responder">Responder</button>
+            }
+            @if (canEdit(c)) {
+              <button class="btn btn-link" type="button" (click)="startEdit(c)" data-test="comentario-editar">Editar</button>
+            }
+            @if (canDelete(c)) {
+              <button class="btn btn-link danger" type="button" (click)="askDelete(c)" data-test="comentario-excluir">Excluir</button>
+            }
+          </div>
+        }
+
+        @if (confirmingDelete() === c.id) {
+          <div class="confirm" data-test="comentario-confirmar-exclusao">
+            <span>Excluir este comentário?</span>
+            <div class="actions">
+              <button class="btn btn-ghost" type="button" (click)="cancelAll()" data-test="comentario-exclusao-cancelar">Cancelar</button>
+              <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="remove(c)" data-test="comentario-exclusao-confirmar">
+                Excluir
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </ng-template>
+
+  <form class="new-comment" (ngSubmit)="send()">
+    <textarea
+      rows="2"
+      [ngModel]="draft()"
+      (ngModelChange)="draft.set($event)"
+      name="comment"
+      [attr.maxlength]="max"
+      placeholder="Escreva um comentário..."
+      data-test="comentario-novo-conteudo"
+    ></textarea>
+    <div class="actions">
+      <button class="btn btn-primary" type="submit" [disabled]="!valid(draft()) || sending()" data-test="comentario-novo-enviar">
+        {{ sending() ? 'Enviando...' : 'Comentar' }}
+      </button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <p class="error" role="alert" data-test="comentario-erro">{{ error() }}</p>
+  }
+</section>

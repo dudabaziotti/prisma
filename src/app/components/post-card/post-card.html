@@ -48,6 +48,17 @@
     }
   }
 
+  <div class="post-footer">
+    <button class="btn btn-link" type="button" (click)="showComments.set(!showComments())" data-test="publicacao-comentarios"
+      [attr.aria-expanded]="showComments()">
+      {{ showComments() ? 'Ocultar comentários' : 'Comentários' }}
+    </button>
+  </div>
+
+  @if (showComments()) {
+    <app-comments [postId]="post().id" [postAuthorId]="post().authorId" />
+  }
+
   @if (confirmingDelete()) {
     <div class="confirm" data-test="confirmar-exclusao">
       <span>Excluir esta publicação? Essa ação não pode ser desfeita.</span>

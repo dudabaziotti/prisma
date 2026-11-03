@@ -58,3 +58,18 @@ export function extractHashtags(text: string): string[] {
 export function parseInterests(text: string): string[] {
   return [...new Set(text.split(',').map((i) => i.trim()).filter(Boolean))].slice(0, 10);
 }
+
+export interface Comment {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string;
+  content: string;
+  /** Comentário respondido (um nível de resposta). `null` para comentários principais. */
+  parentId: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export const MAX_COMMENT_LENGTH = 1000;
