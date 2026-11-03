@@ -2,6 +2,7 @@
 // Projetos com prefixo "demo-" rodam só nos emuladores e não precisam de credenciais reais.
 export const environment = {
   useEmulators: true,
+  pomodoro: { focusMinutes: 0.1, breakMinutes: 0.05 },
   firebase: {
     apiKey: 'demo-api-key',
     authDomain: 'demo-prisma.firebaseapp.com',

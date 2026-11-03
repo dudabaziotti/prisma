@@ -73,3 +73,40 @@ export interface Comment {
 }
 
 export const MAX_COMMENT_LENGTH = 1000;
+
+
+export type TimerStatus = 'idle' | 'running' | 'paused';
+
+export interface RoomTimer {
+  status: TimerStatus;
+  startedAt: Date | null;
+  /** Tempo acumulado antes da última pausa, em milissegundos. */
+  elapsedMs: number;
+}
+
+export interface Room {
+  id: string;
+  name: string;
+  subject: string;
+  ownerId: string;
+  ownerName: string;
+  timer: RoomTimer;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface RoomInput {
+  name: string;
+  subject: string;
+}
+
+export interface Participant {
+  uid: string;
+  name: string;
+  avatar: string;
+  joinedAt: Date | null;
+  lastSeen: Date | null;
+}
+
+/** Limite de participantes por sala (RNF09). */
+export const MAX_PARTICIPANTS = 10;
