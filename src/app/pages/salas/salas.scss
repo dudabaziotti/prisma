@@ -1,0 +1,16 @@
+.intro { margin: 4px 0 16px; }
+.create { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; }
+.create input { width: 100%; }
+.create .btn { white-space: nowrap; }
+.create .field { margin-bottom: 0; }
+.room { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.room h2 { font-size: 1.05rem; margin-bottom: 6px; }
+.room .info { display: flex; flex-direction: column; gap: 4px; }
+.room p { margin: 0; }
+.small { font-size: 0.78rem; }
+.chip.live { background: var(--success-soft); color: var(--success); }
+.room .btn { text-decoration: none; }
+.error { margin: 12px 0 0; }
+@media (max-width: 600px) {
+  .create { grid-template-columns: 1fr; }
+}
