@@ -7,6 +7,7 @@ import { FeedPage } from './pages/feed/feed';
 import { LoginPage } from './pages/login/login';
 import { PerfilEditarPage } from './pages/perfil-editar/perfil-editar';
 import { PerfilPage } from './pages/perfil/perfil';
+import { RankingPage } from './pages/ranking/ranking';
 import { SalaPage } from './pages/sala/sala';
 import { SalasPage } from './pages/salas/salas';
 
@@ -26,6 +27,7 @@ export const routes: Routes = [
       { path: 'salas', component: SalasPage, title: 'Salas de foco | Prisma' },
       { path: 'salas/:id', component: SalaPage, title: 'Sala de foco | Prisma' },
       { path: 'disciplinas', component: DisciplinasPage, title: 'Disciplinas | Prisma' },
+      { path: 'ranking', component: RankingPage, title: 'Ranking semanal | Prisma' },
     ],
   },
   { path: '**', redirectTo: '' },

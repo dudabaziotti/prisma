@@ -134,3 +134,24 @@ export interface Like {
   postAuthorId: string;
   createdAt: Date | null;
 }
+
+/** Período do relatório de ranking (RF13). */
+export type RankingPeriod = 'semana-atual' | 'semana-passada' | '30-dias';
+
+/** Atividade bruta usada para montar o ranking. */
+export interface RankingActivity {
+  posts: { authorId: string; authorName: string }[];
+  comments: { authorId: string; authorName: string }[];
+  likes: { uid: string; postAuthorId: string }[];
+  names: Record<string, string>;
+}
+
+export interface RankingRow {
+  position: number;
+  uid: string;
+  name: string;
+  posts: number;
+  comments: number;
+  likesReceived: number;
+  points: number;
+}

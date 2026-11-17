@@ -1,0 +1,83 @@
+<main class="page wide">
+  <section class="card">
+    <div class="head">
+      <div>
+        <h1 class="title">Ranking semanal</h1>
+        <p class="muted intro">
+          Quem mais participou no período. Publicação vale {{ points.post }} pontos, comentário {{ points.comment }} ponto
+          e cada curtida recebida {{ points.like }} pontos (curtir a própria publicação não conta).
+        </p>
+      </div>
+      <div class="controls no-print">
+        <label class="field">
+          <span>Período</span>
+          <select [value]="period()" (change)="select($any($event.target).value)" data-test="ranking-periodo">
+            @for (p of periods; track p[0]) {
+              <option [value]="p[0]">{{ p[1] }}</option>
+            }
+          </select>
+        </label>
+        <button class="btn btn-ghost" type="button" (click)="generate()" [disabled]="loading()" data-test="ranking-atualizar">Atualizar</button>
+      </div>
+    </div>
+
+    <p class="period" data-test="ranking-intervalo">
+      <strong>{{ periodLabel() }}</strong>:
+      {{ range().start | date: 'dd/MM/yyyy' }} a {{ rangeEnd() | date: 'dd/MM/yyyy' }}
+      @if (generatedAt(); as g) {
+        <span class="muted"> · gerado em {{ g | date: "dd/MM/yyyy 'às' HH:mm" }}</span>
+      }
+    </p>
+
+    @if (error()) {
+      <p class="error" role="alert" data-test="ranking-erro">{{ error() }}</p>
+    }
+
+    @if (rows(); as list) {
+      @if (list.length) {
+        <div class="totals" data-test="ranking-totais">
+          <div><strong>{{ totals().people }}</strong><span>{{ totals().people === 1 ? 'participante' : 'participantes' }}</span></div>
+          <div><strong>{{ totals().posts }}</strong><span>{{ totals().posts === 1 ? 'publicação' : 'publicações' }}</span></div>
+          <div><strong>{{ totals().comments }}</strong><span>{{ totals().comments === 1 ? 'comentário' : 'comentários' }}</span></div>
+          <div><strong>{{ totals().likes }}</strong><span>{{ totals().likes === 1 ? 'curtida' : 'curtidas' }}</span></div>
+        </div>
+
+        <div class="table-wrap">
+          <table data-test="ranking-tabela">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="left">Estudante</th>
+                <th>Publicações</th>
+                <th>Comentários</th>
+                <th>Curtidas recebidas</th>
+                <th>Pontos</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of list; track r.uid) {
+                <tr data-test="ranking-linha" [class.me]="r.uid === uid()" [attr.data-me]="r.uid === uid()">
+                  <td data-test="ranking-posicao"><span class="pos" [class.top]="r.position <= 3">{{ r.position }}º</span></td>
+                  <td class="left"><a [routerLink]="['/perfil', r.uid]" data-test="ranking-nome">{{ r.name }}</a></td>
+                  <td data-test="ranking-publicacoes">{{ r.posts }}</td>
+                  <td data-test="ranking-comentarios">{{ r.comments }}</td>
+                  <td data-test="ranking-curtidas">{{ r.likesReceived }}</td>
+                  <td data-test="ranking-pontos"><strong>{{ r.points }}</strong></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="actions no-print">
+          <a class="btn btn-ghost" [href]="csvHref()" [attr.download]="csvName()" data-test="ranking-exportar">Exportar CSV</a>
+          <button class="btn btn-primary" type="button" (click)="print()" data-test="ranking-imprimir">Imprimir</button>
+        </div>
+      } @else {
+        <p class="muted empty" data-test="ranking-vazio">Nenhuma atividade nesse período.</p>
+      }
+    } @else if (loading()) {
+      <p class="muted empty">Gerando relatório...</p>
+    }
+  </section>
+</main>

@@ -6,7 +6,7 @@
   z-index: 10;
 }
 .topbar-inner {
-  max-width: 980px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 10px 16px;
   display: flex;
@@ -25,10 +25,14 @@
 }
 nav {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
   a {
-    padding: 6px 12px;
+    padding: 6px 10px;
+    white-space: nowrap;
     border-radius: 8px;
     color: var(--text);
     text-decoration: none;
