@@ -56,6 +56,8 @@ export class UserService {
     await updateRefs(comments.docs.map((d) => d.ref), author);
     const rooms = await getDocs(query(collection(db, 'rooms'), where('ownerId', '==', uid)));
     await updateRefs(rooms.docs.map((d) => d.ref), { ownerName: changes.name });
+    const likes = await getDocs(query(collectionGroup(db, 'likes'), where('uid', '==', uid)));
+    await updateRefs(likes.docs.map((d) => d.ref), { name: changes.name, avatar: changes.avatar });
     const subjects = await getDocs(query(collection(db, 'subjects'), where('createdBy', '==', uid)));
     await updateRefs(subjects.docs.map((d) => d.ref), { createdByName: changes.name });
   }

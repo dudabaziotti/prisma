@@ -49,11 +49,28 @@
   }
 
   <div class="post-footer">
+    <button class="btn btn-link like" [class.liked]="liked()" type="button" (click)="toggleLike()" [disabled]="liking()"
+      [attr.aria-pressed]="liked()" data-test="publicacao-curtir">
+      {{ liked() ? 'Curtido' : 'Curtir' }}
+    </button>
+    <button class="btn btn-link count" type="button" (click)="showLikes.set(!showLikes())" [disabled]="!likes().length"
+      data-test="publicacao-curtidas-contagem">
+      {{ likes().length }} {{ likes().length === 1 ? 'curtida' : 'curtidas' }}
+    </button>
     <button class="btn btn-link" type="button" (click)="showComments.set(!showComments())" data-test="publicacao-comentarios"
       [attr.aria-expanded]="showComments()">
       {{ showComments() ? 'Ocultar comentários' : 'Comentários' }}
     </button>
   </div>
+
+  @if (showLikes() && likes().length) {
+    <p class="likers muted" data-test="publicacao-curtidas-lista">
+      Curtido por
+      @for (l of likes(); track l.uid; let last = $last) {
+        <a [routerLink]="['/perfil', l.uid]" data-test="curtida-nome">{{ l.name }}</a>{{ last ? '' : ', ' }}
+      }
+    </p>
+  }
 
   @if (showComments()) {
     <app-comments [postId]="post().id" [postAuthorId]="post().authorId" />
