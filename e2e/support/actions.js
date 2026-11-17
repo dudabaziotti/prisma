@@ -18,9 +18,10 @@ function newUser(prefix = 'Estudante') {
  */
 async function open(driver, path) {
   const current = await driver.getCurrentUrl().catch(() => '');
-  if (current.startsWith(config.BASE_URL)) {
+  // Se pedir a página em que já está, recarrega: o teste espera a tela limpa (sem formulário
+  // preenchido nem janela aberta do teste anterior).
+  if (current.startsWith(config.BASE_URL) && new URL(current).pathname !== path.split('?')[0]) {
     const before = new URL(current).pathname;
-    if (before === path) return;
     await driver.executeScript(
       "history.pushState(null, '', arguments[0]); window.dispatchEvent(new PopStateEvent('popstate', { state: null }));",
       path,
