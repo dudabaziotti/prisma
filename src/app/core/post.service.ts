@@ -16,6 +16,7 @@ import {
 import { Observable } from 'rxjs';
 import { db } from './firebase';
 import { CommentService } from './comment.service';
+import { LikeService } from './like.service';
 import { Post, PostInput, UserProfile, extractHashtags } from './models';
 import { toDate } from './user.service';
 
@@ -24,6 +25,7 @@ import { toDate } from './user.service';
 export class PostService {
   private readonly posts = collection(db, 'posts');
   private readonly comments = inject(CommentService);
+  private readonly likes = inject(LikeService);
 
   /** Feed em ordem cronológica, da mais recente para a mais antiga (RF06). */
   watchFeed(): Observable<Post[]> {

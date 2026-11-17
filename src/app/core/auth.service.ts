@@ -99,20 +99,25 @@ export class AuthService {
     // A ordem importa: as regras do Firestore conferem o dono de cada documento.
     // 1. Comentários do usuário em qualquer publicação.
     await deleteRefs(await refsOf(query(collectionGroup(db, 'comments'), where('authorId', '==', uid))));
-    // 2. Publicações do usuário, cada uma com os comentários de outras pessoas.
+    // 2. Curtidas do usuário em qualquer publicação.
+    await deleteRefs(await refsOf(query(collectionGroup(db, 'likes'), where('uid', '==', uid))));
+    // 3. Publicações do usuário, cada uma com os comentários e curtidas de outras pessoas.
     const posts = await refsOf(query(collection(db, 'posts'), where('authorId', '==', uid)));
     for (const post of posts) {
       await deleteRefs(await refsOf(collection(post, 'comments')));
+      await deleteRefs(await refsOf(collection(post, 'likes')));
     }
     await deleteRefs(posts);
-    // 3. Presença em salas de foco e salas criadas pelo usuário (com os participantes).
+    // 4. Presença em salas de foco e salas criadas pelo usuário (com os participantes).
     await deleteRefs(await refsOf(query(collectionGroup(db, 'participants'), where('uid', '==', uid))));
     const rooms = await refsOf(query(collection(db, 'rooms'), where('ownerId', '==', uid)));
     for (const room of rooms) {
       await deleteRefs(await refsOf(collection(room, 'participants')));
     }
     await deleteRefs(rooms);
-    // 4. Perfil.
+    // 5. Disciplinas adicionadas pelo usuário ao catálogo.
+    await deleteRefs(await refsOf(query(collection(db, 'subjects'), where('createdBy', '==', uid))));
+    // 6. Perfil.
     await deleteRefs([doc(db, 'users', uid)]);
 
     this.listenToProfile(null);

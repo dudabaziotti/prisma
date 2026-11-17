@@ -110,3 +110,48 @@ export interface Participant {
 
 /** Limite de participantes por sala (RNF09). */
 export const MAX_PARTICIPANTS = 10;
+/** Disciplina do catálogo (RF05): usada para categorizar publicações e salas. */
+export interface Subject {
+  id: string;
+  name: string;
+  description: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface SubjectInput {
+  name: string;
+  description: string;
+}
+
+/** Curtida de uma publicação (RF07). O id do documento é o uid de quem curtiu. */
+export interface Like {
+  uid: string;
+  name: string;
+  avatar: string;
+  postAuthorId: string;
+  createdAt: Date | null;
+}
+
+/** Período do relatório de ranking (RF13). */
+export type RankingPeriod = 'semana-atual' | 'semana-passada' | '30-dias';
+
+/** Atividade bruta usada para montar o ranking. */
+export interface RankingActivity {
+  posts: { authorId: string; authorName: string }[];
+  comments: { authorId: string; authorName: string }[];
+  likes: { uid: string; postAuthorId: string }[];
+  names: Record<string, string>;
+}
+
+export interface RankingRow {
+  position: number;
+  uid: string;
+  name: string;
+  posts: number;
+  comments: number;
+  likesReceived: number;
+  points: number;
+}
