@@ -110,3 +110,18 @@ export interface Participant {
 
 /** Limite de participantes por sala (RNF09). */
 export const MAX_PARTICIPANTS = 10;
+/** Disciplina do catálogo (RF05): usada para categorizar publicações e salas. */
+export interface Subject {
+  id: string;
+  name: string;
+  description: string;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface SubjectInput {
+  name: string;
+  description: string;
+}

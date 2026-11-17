@@ -112,7 +112,9 @@ export class AuthService {
       await deleteRefs(await refsOf(collection(room, 'participants')));
     }
     await deleteRefs(rooms);
-    // 4. Perfil.
+    // 4. Disciplinas adicionadas pelo usuário ao catálogo.
+    await deleteRefs(await refsOf(query(collection(db, 'subjects'), where('createdBy', '==', uid))));
+    // 5. Perfil.
     await deleteRefs([doc(db, 'users', uid)]);
 
     this.listenToProfile(null);

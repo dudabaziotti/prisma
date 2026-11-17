@@ -23,7 +23,7 @@
         [attr.data-test]="testPrefix() + '-disciplina'"
       />
       <datalist [id]="listId">
-        @for (s of subjects; track s) {
+        @for (s of subjects(); track s) {
           <option [value]="s"></option>
         }
       </datalist>

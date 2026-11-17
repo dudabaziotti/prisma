@@ -6,6 +6,7 @@ rules_version = '2';
 // - Só o autor edita ou exclui a própria publicação (regra de negócio do DRE).
 // - Só o autor edita o próprio comentário; o autor do comentário ou da publicação pode excluí-lo.
 // - Só quem criou a sala de foco edita, exclui e controla o cronômetro; cada um entra e sai por si.
+// - Qualquer usuário adiciona disciplinas ao catálogo; só quem adicionou edita ou exclui.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -49,6 +50,11 @@ service cloud.firestore {
 
     function roomOwner(roomId) {
       return get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerId;
+    }
+
+    function validSubject(data) {
+      return data.name is string && data.name.size() >= 2 && data.name.size() <= 60
+        && data.description is string && data.description.size() <= 200;
     }
 
     match /users/{uid} {
@@ -103,6 +109,17 @@ service cloud.firestore {
           && exists(/databases/$(database)/documents/rooms/$(roomId));
         allow delete: if isOwner(uid) || isOwner(roomOwner(roomId));
       }
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && validSubject(request.resource.data);
+      allow update: if isOwner(resource.data.createdBy)
+        && request.resource.data.createdBy == resource.data.createdBy
+        && validSubject(request.resource.data);
+      allow delete: if isOwner(resource.data.createdBy);
     }
 
     // Consultas em todas as participações (exclusão de conta).
