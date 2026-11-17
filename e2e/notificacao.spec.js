@@ -2,12 +2,17 @@
  * CRUD de Notificações — Release 04 (RF12)
  * Curtidas, comentários e novos seguidores geram notificações (C); a pessoa vê a lista e o
  * contador no menu (R), marca como lida (U) e exclui uma ou todas (D).
+ *
+ * Login uma vez por pessoa, cada uma no seu navegador: o autor recebe as notificações e o fã
+ * curte, comenta e segue. Antes de cada teste o autor limpa as notificações dele e faz uma
+ * publicação nova, para a contagem sempre começar do zero.
  */
 const assert = require('assert');
 const { By } = require('selenium-webdriver');
 const config = require('./support/config');
-const { createDriver, closeDriver, byTest, click, find, waitForText } = require('./support/driver');
-const { registerAndEnter, login, logout, createPost, waitForPost, inCard } = require('./support/actions');
+const { byTest, click, find, waitForText } = require('./support/driver');
+const { createPost, waitForPost, inCard, open } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
@@ -24,19 +29,6 @@ async function commentPost(driver, postText, text) {
   await field.sendKeys(text);
   await (await card.findElement(byTest('comentario-novo-enviar'))).click();
   await driver.wait(async () => (await card.findElements(byTest('comentario'))).length > 0, config.WAIT);
-}
-
-async function followAuthor(driver, postText, authorName) {
-  const card = await waitForPost(driver, postText);
-  await (await card.findElement(By.css('a.author'))).click();
-  await waitForText(driver, 'perfil-nome', authorName);
-  await click(driver, 'perfil-seguir');
-  await driver.wait(async () => (await (await find(driver, 'perfil-seguir')).getAttribute('aria-pressed')) === 'true', config.WAIT);
-}
-
-async function loginAs(driver, user) {
-  await login(driver, user.email, user.password);
-  await waitForText(driver, 'usuario-logado', user.name);
 }
 
 async function openNotifications(driver) {
@@ -59,54 +51,69 @@ async function badgeText(driver) {
 }
 
 describe('CRUD de Notificações', function () {
+  const s = useSessions(['autor', 'fa']);
+
   beforeEach(async function () {
-    this.driver = await createDriver();
-    this.author = await registerAndEnter(this.driver);
+    // O autor começa cada teste sem notificações e com uma publicação nova.
+    const author = s.autor.driver;
+    await openNotifications(author);
+    if ((await author.findElements(byTest('notificacoes-limpar'))).length) {
+      await click(author, 'notificacoes-limpar');
+      await click(author, 'notificacoes-limpar-confirmar');
+      await find(author, 'notificacoes-vazio');
+    }
+    await click(author, 'nav-feed');
     this.postText = unique('Publicação para notificar');
-    await createPost(this.driver, this.postText);
-    await logout(this.driver);
+    await createPost(author, this.postText);
   });
 
-  afterEach(async function () {
-    await closeDriver(this);
-  });
+  /** O fã passa a seguir o autor (se já seguia, deixa de seguir antes, para gerar um seguidor novo). */
+  async function followAuthor(postText) {
+    const fan = s.fa.driver;
+    await open(fan, '/feed');
+    const card = await waitForPost(fan, postText);
+    await (await card.findElement(By.css('a.author'))).click();
+    await waitForText(fan, 'perfil-nome', s.autor.user.name);
+    const button = await find(fan, 'perfil-seguir');
+    await fan.wait(async () => (await button.getAttribute('data-loaded')) === 'true', config.WAIT);
+    const pressed = async (v) => fan.wait(async () => (await button.getAttribute('aria-pressed')) === v, config.WAIT);
+    if ((await button.getAttribute('aria-pressed')) === 'true') {
+      await button.click();
+      await pressed('false');
+    }
+    await button.click();
+    await pressed('true');
+  }
 
-  it('CT-12.1 curtida gera notificação e o contador aparece no menu', async function () {
-    const fan = await registerAndEnter(this.driver);
-    await likePost(this.driver, this.postText);
-    await logout(this.driver);
+  it('CT-12.1 curtida gera notificação e o contador aparece no menu na hora', async function () {
+    await likePost(s.fa.driver, this.postText);
 
-    await loginAs(this.driver, this.author);
-    await this.driver.wait(async () => (await badgeText(this.driver)) === '1', config.WAIT, 'O contador do menu deveria mostrar 1');
-    await openNotifications(this.driver);
-    const [n] = await waitForNotifications(this.driver, 1);
-    assert.strictEqual(await (await n.findElement(byTest('notificacao-texto'))).getText(), `${fan.name} curtiu sua publicação`);
+    // O autor está com o feed aberto: o contador do menu atualiza sozinho
+    const author = this.driver;
+    await author.wait(async () => (await badgeText(author)) === '1', config.WAIT, 'O contador do menu deveria mostrar 1');
+    await openNotifications(author);
+    const [n] = await waitForNotifications(author, 1);
+    assert.strictEqual(await (await n.findElement(byTest('notificacao-texto'))).getText(), `${s.fa.user.name} curtiu sua publicação`);
     assert.ok((await (await n.findElement(byTest('notificacao-trecho'))).getText()).includes(this.postText));
     assert.strictEqual(await n.getAttribute('data-read'), 'false');
   });
 
   it('CT-12.2 comentário e novo seguidor também geram notificações', async function () {
-    const fan = await registerAndEnter(this.driver);
-    await commentPost(this.driver, this.postText, 'Me ajudou muito!');
-    await followAuthor(this.driver, this.postText, this.author.name);
-    await logout(this.driver);
+    await commentPost(s.fa.driver, this.postText, 'Me ajudou muito!');
+    await followAuthor(this.postText);
 
-    await loginAs(this.driver, this.author);
     await openNotifications(this.driver);
     const list = await waitForNotifications(this.driver, 2);
     const types = await Promise.all(list.map((n) => n.getAttribute('data-type')));
     assert.deepStrictEqual(types.sort(), ['comment', 'follow']);
     const texts = await Promise.all(list.map(async (n) => (await n.findElement(byTest('notificacao-texto'))).getText()));
-    assert.ok(texts.includes(`${fan.name} começou a seguir você`));
-    assert.ok(texts.includes(`${fan.name} comentou na sua publicação`));
+    assert.ok(texts.includes(`${s.fa.user.name} começou a seguir você`));
+    assert.ok(texts.includes(`${s.fa.user.name} comentou na sua publicação`));
   });
 
   it('CT-12.3 marca uma notificação como lida e o contador some', async function () {
-    await registerAndEnter(this.driver);
-    await likePost(this.driver, this.postText);
-    await logout(this.driver);
+    await likePost(s.fa.driver, this.postText);
 
-    await loginAs(this.driver, this.author);
     await openNotifications(this.driver);
     const [n] = await waitForNotifications(this.driver, 1);
     await (await n.findElement(byTest('notificacao-marcar-lida'))).click();
@@ -115,12 +122,9 @@ describe('CRUD de Notificações', function () {
   });
 
   it('CT-12.4 marca todas como lidas de uma vez', async function () {
-    await registerAndEnter(this.driver);
-    await likePost(this.driver, this.postText);
-    await commentPost(this.driver, this.postText, 'Valeu!');
-    await logout(this.driver);
+    await likePost(s.fa.driver, this.postText);
+    await commentPost(s.fa.driver, this.postText, 'Valeu!');
 
-    await loginAs(this.driver, this.author);
     await openNotifications(this.driver);
     await waitForNotifications(this.driver, 2);
     await click(this.driver, 'notificacoes-marcar-todas');
@@ -133,12 +137,9 @@ describe('CRUD de Notificações', function () {
   });
 
   it('CT-12.5 exclui uma notificação', async function () {
-    await registerAndEnter(this.driver);
-    await likePost(this.driver, this.postText);
-    await commentPost(this.driver, this.postText, 'Obrigado!');
-    await logout(this.driver);
+    await likePost(s.fa.driver, this.postText);
+    await commentPost(s.fa.driver, this.postText, 'Obrigado!');
 
-    await loginAs(this.driver, this.author);
     await openNotifications(this.driver);
     const list = await waitForNotifications(this.driver, 2);
     await (await list[0].findElement(byTest('notificacao-excluir'))).click();
@@ -146,12 +147,9 @@ describe('CRUD de Notificações', function () {
   });
 
   it('CT-12.6 limpa todas as notificações após confirmar', async function () {
-    await registerAndEnter(this.driver);
-    await likePost(this.driver, this.postText);
-    await followAuthor(this.driver, this.postText, this.author.name);
-    await logout(this.driver);
+    await likePost(s.fa.driver, this.postText);
+    await followAuthor(this.postText);
 
-    await loginAs(this.driver, this.author);
     await openNotifications(this.driver);
     await waitForNotifications(this.driver, 2);
     await click(this.driver, 'notificacoes-limpar');
@@ -160,7 +158,6 @@ describe('CRUD de Notificações', function () {
   });
 
   it('CT-12.7 curtir e comentar a própria publicação não gera notificação', async function () {
-    await loginAs(this.driver, this.author);
     await likePost(this.driver, this.postText);
     await commentPost(this.driver, this.postText, 'Comentário meu');
     await openNotifications(this.driver);
