@@ -1,4 +1,4 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { Builder, By, logging, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const fs = require('fs');
 const path = require('path');
@@ -14,6 +14,10 @@ async function createDriver() {
     '--lang=pt-BR',
   );
   if (config.HEADLESS) options.addArguments('--headless=new');
+  // Guarda o console do navegador para salvar junto com o print quando um teste falha.
+  const prefs = new logging.Preferences();
+  prefs.setLevel(logging.Type.BROWSER, logging.Level.ALL);
+  options.setLoggingPrefs(prefs);
   if (config.CHROME_BIN) options.setChromeBinaryPath(config.CHROME_BIN);
 
   const builder = new Builder().forBrowser('chrome').setChromeOptions(options);
