@@ -19,7 +19,11 @@ const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toSt
 async function likePost(driver, postText) {
   const card = await waitForPost(driver, postText);
   await (await inCard(card, 'publicacao-curtir')).click();
-  await driver.wait(async () => (await (await inCard(card, 'publicacao-curtir')).getAttribute('aria-pressed')) === 'true', config.WAIT);
+  // Espera o servidor confirmar (o botão fica desabilitado até lá), senão a notificação sai antes da curtida.
+  await driver.wait(async () => {
+    const button = await inCard(card, 'publicacao-curtir');
+    return (await button.getAttribute('aria-pressed')) === 'true' && (await button.isEnabled());
+  }, config.WAIT);
 }
 
 async function commentPost(driver, postText, text) {
