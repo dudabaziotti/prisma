@@ -10,7 +10,25 @@ function newUser(prefix = 'Estudante') {
   return { name: `${prefix} ${id}`, email: `teste.${id}@prisma.test`, password: 'senha123' };
 }
 
+/**
+ * Abre uma página do Prisma. Se o navegador já está no Prisma, troca de página por dentro do
+ * app (como um clique num link), sem recarregar: cada recarga deixa conexões abertas com o
+ * emulador do Firestore, que usa HTTP/1.1 (o Chrome só abre 6 por servidor), e depois de
+ * algumas recargas o navegador fica sem conexão e o Firestore passa a se comportar como offline.
+ */
 async function open(driver, path) {
+  const current = await driver.getCurrentUrl().catch(() => '');
+  if (current.startsWith(config.BASE_URL)) {
+    const before = new URL(current).pathname;
+    if (before === path) return;
+    await driver.executeScript(
+      "history.pushState(null, '', arguments[0]); window.dispatchEvent(new PopStateEvent('popstate', { state: null }));",
+      path,
+    );
+    // Espera o app trocar de página (ou redirecionar, por exemplo para o login).
+    await driver.wait(async () => new URL(await driver.getCurrentUrl()).pathname !== before, config.WAIT);
+    return;
+  }
   await driver.get(`${config.BASE_URL}${path}`);
 }
 
