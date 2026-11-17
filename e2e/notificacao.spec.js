@@ -80,7 +80,13 @@ describe('CRUD de Notificações', function () {
     await waitForText(fan, 'perfil-nome', s.autor.user.name);
     const button = await find(fan, 'perfil-seguir');
     await fan.wait(async () => (await button.getAttribute('data-loaded')) === 'true', config.WAIT);
-    const pressed = async (v) => fan.wait(async () => (await button.getAttribute('aria-pressed')) === v, config.WAIT);
+    // Espera o servidor confirmar: o botão fica desabilitado enquanto a gravação está em andamento.
+    const pressed = async (v) =>
+      fan.wait(
+        async () => (await button.getAttribute('aria-pressed')) === v && (await button.isEnabled()),
+        config.WAIT,
+        `O botão de seguir deveria ficar com aria-pressed=${v} e habilitado`,
+      );
     if ((await button.getAttribute('aria-pressed')) === 'true') {
       await button.click();
       await pressed('false');

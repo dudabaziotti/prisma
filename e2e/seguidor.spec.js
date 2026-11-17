@@ -27,7 +27,10 @@ async function waitForCount(driver, test, expected) {
 
 async function waitFollowing(driver, following) {
   await driver.wait(
-    async () => (await (await find(driver, 'perfil-seguir')).getAttribute('aria-pressed')) === String(following),
+    async () => {
+      const button = await find(driver, 'perfil-seguir');
+      return (await button.getAttribute('aria-pressed')) === String(following) && (await button.isEnabled());
+    },
     config.WAIT,
     following ? 'O botão não mudou para "Deixar de seguir"' : 'O botão não voltou para "Seguir"',
   );
