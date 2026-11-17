@@ -12,3 +12,6 @@ header { display: flex; justify-content: space-between; align-items: flex-start;
   padding: 12px; border-radius: 8px; font-size: 0.9rem;
 }
 .post-footer { display: flex; margin: -4px 0 -4px -8px; }
+.post-footer .like.liked { color: var(--danger); font-weight: 600; }
+.post-footer .count:disabled { opacity: 1; color: var(--muted); cursor: default; }
+.likers { margin: -4px 0 0; font-size: 0.85rem; }

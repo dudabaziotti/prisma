@@ -125,3 +125,12 @@ export interface SubjectInput {
   name: string;
   description: string;
 }
+
+/** Curtida de uma publicação (RF07). O id do documento é o uid de quem curtiu. */
+export interface Like {
+  uid: string;
+  name: string;
+  avatar: string;
+  postAuthorId: string;
+  createdAt: Date | null;
+}
