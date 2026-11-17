@@ -8,6 +8,8 @@ rules_version = '2';
 // - Só quem criou a sala de foco edita, exclui e controla o cronômetro; cada um entra e sai por si.
 // - Qualquer usuário adiciona disciplinas ao catálogo; só quem adicionou edita ou exclui.
 // - Cada usuário curte uma publicação uma vez só e só remove a própria curtida (o autor da publicação também pode).
+// - Cada um segue em nome próprio; quem segue deixa de seguir e quem é seguido pode remover o seguidor.
+// - Sala "só para seguidores" (RF17): só entra quem segue o dono da sala.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -37,6 +39,18 @@ service cloud.firestore {
         && (data.parentId == null || data.parentId is string);
     }
 
+    function follows(followerId, followedId) {
+      return exists(/databases/$(database)/documents/follows/$(followerId + '_' + followedId));
+    }
+
+    // Sala pública, dono da sala ou seguidor do dono (RF17). Salas antigas sem "access" são públicas.
+    function canJoin(roomId) {
+      let room = get(/databases/$(database)/documents/rooms/$(roomId)).data;
+      return room.get('access', 'public') == 'public'
+        || room.ownerId == request.auth.uid
+        || follows(request.auth.uid, room.ownerId);
+    }
+
     function postAuthor(postId) {
       return get(/databases/$(database)/documents/posts/$(postId)).data.authorId;
     }
@@ -44,6 +58,7 @@ service cloud.firestore {
     function validRoom(data) {
       return data.name is string && data.name.size() >= 2 && data.name.size() <= 60
         && data.subject is string && data.subject.size() <= 60
+        && data.get('access', 'public') in ['public', 'followers']
         && data.timer is map
         && data.timer.status in ['idle', 'running', 'paused']
         && data.timer.elapsedMs is number && data.timer.elapsedMs >= 0;
@@ -124,7 +139,8 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create, update: if isOwner(uid)
           && request.resource.data.uid == uid
-          && exists(/databases/$(database)/documents/rooms/$(roomId));
+          && exists(/databases/$(database)/documents/rooms/$(roomId))
+          && canJoin(roomId);
         allow delete: if isOwner(uid) || isOwner(roomOwner(roomId));
       }
     }
@@ -138,6 +154,20 @@ service cloud.firestore {
         && request.resource.data.createdBy == resource.data.createdBy
         && validSubject(request.resource.data);
       allow delete: if isOwner(resource.data.createdBy);
+    }
+
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followedId != request.auth.uid
+        && followId == request.auth.uid + '_' + request.resource.data.followedId
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.followedId));
+      // Troca de nome/avatar no perfil: cada lado atualiza o próprio nome, sem mudar o vínculo.
+      allow update: if (isOwner(resource.data.followerId) || isOwner(resource.data.followedId))
+        && request.resource.data.followerId == resource.data.followerId
+        && request.resource.data.followedId == resource.data.followedId;
+      allow delete: if isOwner(resource.data.followerId) || isOwner(resource.data.followedId);
     }
 
     // Consultas em todas as participações (exclusão de conta).

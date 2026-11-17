@@ -12,6 +12,19 @@
         } @else if (isOwn()) {
           <p class="muted">Você ainda não escreveu uma biografia.</p>
         }
+        <div class="follow-stats">
+          <button class="btn btn-link stat" type="button" (click)="toggleList('followers')" [class.active]="list() === 'followers'"
+            data-test="perfil-seguidores-contagem">
+            <strong>{{ followers().length }}</strong> {{ followers().length === 1 ? 'seguidor' : 'seguidores' }}
+          </button>
+          <button class="btn btn-link stat" type="button" (click)="toggleList('following')" [class.active]="list() === 'following'"
+            data-test="perfil-seguindo-contagem">
+            <strong>{{ following().length }}</strong> seguindo
+          </button>
+          @if (!isOwn() && followsMe()) {
+            <span class="chip" data-test="perfil-segue-voce">Segue você</span>
+          }
+        </div>
         @if (p.interests.length) {
           <div class="chips" data-test="perfil-interesses">
             @for (i of p.interests; track i) {
@@ -22,8 +35,51 @@
       </div>
       @if (isOwn()) {
         <a class="btn btn-ghost edit" routerLink="/perfil/editar" data-test="perfil-editar">Editar perfil</a>
+      } @else {
+        <button class="btn edit" [class.btn-primary]="!amFollowing()" [class.btn-ghost]="amFollowing()" type="button"
+          (click)="toggleFollow()" [disabled]="followBusy()" [attr.aria-pressed]="amFollowing()" data-test="perfil-seguir">
+          {{ amFollowing() ? 'Deixar de seguir' : 'Seguir' }}
+        </button>
       }
     </section>
+    @if (followError()) {
+      <p class="error" role="alert" data-test="perfil-seguir-erro">{{ followError() }}</p>
+    }
+
+    @if (list() === 'followers') {
+      <section class="card follow-list" data-test="perfil-lista-seguidores">
+        <h2 class="list-title">Seguidores</h2>
+        @for (f of followers(); track f.id) {
+          <div class="person" data-test="seguidor">
+            <img class="avatar sm" [src]="avatarOf(f.followerAvatar)" alt="" />
+            <a [routerLink]="['/perfil', f.followerId]" data-test="seguidor-nome">{{ f.followerName }}</a>
+            @if (isOwn()) {
+              <button class="btn btn-link danger" type="button" (click)="removeFollower(f.followerId)" [disabled]="followBusy()"
+                data-test="seguidor-remover">Remover</button>
+            }
+          </div>
+        } @empty {
+          <p class="muted" data-test="perfil-lista-vazia">Ninguém segue {{ isOwn() ? 'você' : p.name }} ainda.</p>
+        }
+      </section>
+    }
+    @if (list() === 'following') {
+      <section class="card follow-list" data-test="perfil-lista-seguindo">
+        <h2 class="list-title">Seguindo</h2>
+        @for (f of following(); track f.id) {
+          <div class="person" data-test="seguindo">
+            <img class="avatar sm" [src]="avatarOf(f.followedAvatar)" alt="" />
+            <a [routerLink]="['/perfil', f.followedId]" data-test="seguindo-nome">{{ f.followedName }}</a>
+            @if (isOwn()) {
+              <button class="btn btn-link danger" type="button" (click)="stopFollowing(f.followedId)" [disabled]="followBusy()"
+                data-test="seguindo-deixar">Deixar de seguir</button>
+            }
+          </div>
+        } @empty {
+          <p class="muted" data-test="perfil-lista-vazia">{{ isOwn() ? 'Você ainda não segue' : p.name + ' ainda não segue' }} ninguém.</p>
+        }
+      </section>
+    }
 
     <h2 class="section-title">Publicações</h2>
     @if (posts(); as list) {

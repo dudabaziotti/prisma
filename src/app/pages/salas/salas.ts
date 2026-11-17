@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/firebase-errors';
-import { Room, SUBJECT_SUGGESTIONS } from '../../core/models';
+import { Room, RoomAccess, SUBJECT_SUGGESTIONS } from '../../core/models';
 import { RoomService } from '../../core/room.service';
 
 /** Lista as salas de foco (Read) e cria novas (Create). */
@@ -26,6 +26,7 @@ export class SalasPage {
   readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
     subject: ['', Validators.maxLength(60)],
+    access: ['public' as RoomAccess],
   });
   private readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
   readonly canCreate = computed(() => (this.value().name?.trim().length ?? 0) >= 2);

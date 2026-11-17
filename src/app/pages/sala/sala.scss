@@ -22,4 +22,6 @@ h1 { font-size: 1.4rem; margin-bottom: 6px; }
 }
 @media (max-width: 700px) {
   .grid { grid-template-columns: 1fr; }
-}
+}.restricted { text-align: center; }
+.restricted p { margin: 0 0 8px; }
+.restricted .btn { margin-top: 8px; display: inline-block; }

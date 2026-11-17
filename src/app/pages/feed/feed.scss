@@ -1,0 +1,6 @@
+.tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; }
+.tabs button {
+  flex: 1; border: 0; background: transparent; padding: 8px 12px; border-radius: 8px;
+  font: inherit; color: var(--muted); cursor: pointer;
+}
+.tabs button.active { background: var(--blue-soft); color: var(--dark-blue); font-weight: 600; }

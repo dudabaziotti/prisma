@@ -90,6 +90,8 @@ export interface Room {
   subject: string;
   ownerId: string;
   ownerName: string;
+  /** Salas antigas não têm o campo: valem como públicas. */
+  access: RoomAccess;
   timer: RoomTimer;
   createdAt: Date | null;
   updatedAt: Date | null;
@@ -98,6 +100,7 @@ export interface Room {
 export interface RoomInput {
   name: string;
   subject: string;
+  access?: RoomAccess;
 }
 
 export interface Participant {
@@ -155,3 +158,21 @@ export interface RankingRow {
   likesReceived: number;
   points: number;
 }
+
+/** Vínculo "seguir" (RF09). O id do documento é `${followerId}_${followedId}`. */
+export interface Follow {
+  id: string;
+  followerId: string;
+  followerName: string;
+  followerAvatar: string;
+  followedId: string;
+  followedName: string;
+  followedAvatar: string;
+  createdAt: Date | null;
+}
+
+/** Quem pode entrar na sala de foco (RF17). */
+export type RoomAccess = 'public' | 'followers';
+
+/** Resultado da tentativa de entrar numa sala. */
+export type JoinResult = 'joined' | 'full' | 'followers-only';
