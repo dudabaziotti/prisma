@@ -2,26 +2,21 @@
  * CRUD de Usuário/Perfil — Release 01
  * Cadastro (C), visualização de perfil (R), edição de perfil (U) e exclusão de conta (D),
  * além de login/logout e proteção de rotas.
+ *
+ * Este arquivo testa o próprio cadastro e login, então os testes seguem uma ordem:
+ * primeiro as validações sem estar logado, depois o cadastro (que já deixa o usuário logado),
+ * o login e, com essa mesma sessão, o perfil e a exclusão da conta (sempre por último).
  */
 const assert = require('assert');
-const { createDriver, closeDriver, clearField, byTest, click, find, textOf, type, waitForUrl, waitForText, waitForValue } = require('./support/driver');
-const { newUser, open, register, registerAndEnter, login, logout } = require('./support/actions');
+const { clearField, byTest, click, find, textOf, type, waitForUrl, waitForText, waitForValue } = require('./support/driver');
+const { newUser, open, register, login, logout } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 describe('CRUD de Usuário/Perfil', function () {
-  beforeEach(async function () {
-    this.driver = await createDriver();
-  });
-
-  afterEach(async function () {
-    await closeDriver(this);
-  });
+  // Navegador aberto uma vez para o arquivo todo, ainda sem login.
+  useSessions(['estudante'], { login: false });
 
   describe('Cadastro (RF01)', function () {
-    it('CT-01.1 cadastra um novo usuário e entra no feed', async function () {
-      const user = await registerAndEnter(this.driver);
-      assert.strictEqual(await textOf(this.driver, 'usuario-logado'), user.name);
-    });
-
     it('CT-01.2 não cadastra quando as senhas são diferentes', async function () {
       await register(this.driver, { ...newUser(), confirm: 'outraSenha' });
       assert.match(await textOf(this.driver, 'erro-confirmar'), /não coincidem/);
@@ -37,46 +32,46 @@ describe('CRUD de Usuário/Perfil', function () {
       assert.match(await textOf(this.driver, 'erro-senha'), /6 caracteres/);
     });
 
+    it('CT-01.1 cadastra um novo usuário e entra no feed', async function () {
+      await register(this.driver, this.user);
+      await waitForUrl(this.driver, '/feed');
+      await waitForText(this.driver, 'usuario-logado', this.user.name);
+    });
+
     it('CT-01.4 não permite cadastrar um e-mail já usado', async function () {
-      const user = await registerAndEnter(this.driver);
       await logout(this.driver);
-      await register(this.driver, { ...newUser(), email: user.email });
+      await register(this.driver, { ...newUser(), email: this.user.email });
       assert.match(await textOf(this.driver, 'cadastro-erro'), /já está cadastrado/);
     });
   });
 
   describe('Login e sessão (RF02)', function () {
-    it('CT-02.1 entra com e-mail e senha válidos', async function () {
-      const user = await registerAndEnter(this.driver);
-      await logout(this.driver);
-      await login(this.driver, user.email, user.password);
-      await waitForUrl(this.driver, '/feed');
-      await waitForText(this.driver, 'usuario-logado', user.name);
-    });
-
-    it('CT-02.2 mostra erro com senha incorreta', async function () {
-      const user = await registerAndEnter(this.driver);
-      await logout(this.driver);
-      await login(this.driver, user.email, 'senhaErrada');
-      assert.match(await textOf(this.driver, 'login-erro'), /incorretos/);
-    });
-
     it('CT-02.3 redireciona para o login ao acessar o feed sem estar logado', async function () {
       await open(this.driver, '/feed');
       await waitForUrl(this.driver, '/login');
     });
+
+    it('CT-02.2 mostra erro com senha incorreta', async function () {
+      await login(this.driver, this.user.email, 'senhaErrada');
+      assert.match(await textOf(this.driver, 'login-erro'), /incorretos/);
+    });
+
+    it('CT-02.1 entra com e-mail e senha válidos', async function () {
+      await login(this.driver, this.user.email, this.user.password);
+      await waitForUrl(this.driver, '/feed');
+      await waitForText(this.driver, 'usuario-logado', this.user.name);
+    });
   });
 
+  // Daqui em diante, tudo com a sessão aberta no CT-02.1 (sem novo login).
   describe('Perfil (RF03)', function () {
     it('CT-03.1 mostra o perfil do usuário logado', async function () {
-      const user = await registerAndEnter(this.driver);
       await click(this.driver, 'nav-perfil');
-      await waitForText(this.driver, 'perfil-nome', user.name);
+      await waitForText(this.driver, 'perfil-nome', this.user.name);
       await find(this.driver, 'perfil-editar');
     });
 
     it('CT-03.2 edita nome, biografia, interesses e avatar', async function () {
-      await registerAndEnter(this.driver);
       await open(this.driver, '/perfil/editar');
       await waitForValue(this.driver, 'editar-nome');
       const newName = `Nome Editado ${Date.now().toString(36)}`;
@@ -93,10 +88,10 @@ describe('CRUD de Usuário/Perfil', function () {
       assert.deepStrictEqual(await Promise.all(interests.map((i) => i.getText())), ['Cálculo', 'Programação', 'Física']);
       assert.strictEqual(await (await find(this.driver, 'perfil-avatar')).getAttribute('data-avatar'), 'raposa');
       await waitForText(this.driver, 'usuario-logado', newName);
+      this.user.name = newName;
     });
 
     it('CT-03.3 não salva o perfil com nome vazio', async function () {
-      await registerAndEnter(this.driver);
       await open(this.driver, '/perfil/editar');
       await waitForValue(this.driver, 'editar-nome');
       await clearField(this.driver, await find(this.driver, 'editar-nome'));
@@ -108,7 +103,6 @@ describe('CRUD de Usuário/Perfil', function () {
 
   describe('Exclusão de conta (RF19)', function () {
     it('CT-19.1 não exclui a conta com a senha errada', async function () {
-      await registerAndEnter(this.driver);
       await open(this.driver, '/perfil/editar');
       await click(this.driver, 'excluir-conta');
       await type(this.driver, 'excluir-conta-senha', 'senhaErrada');
@@ -118,16 +112,15 @@ describe('CRUD de Usuário/Perfil', function () {
     });
 
     it('CT-19.2 exclui a conta e impede um novo login', async function () {
-      const user = await registerAndEnter(this.driver);
       await open(this.driver, '/perfil/editar');
       await click(this.driver, 'excluir-conta');
-      await type(this.driver, 'excluir-conta-senha', user.password);
+      await type(this.driver, 'excluir-conta-senha', this.user.password);
       await click(this.driver, 'excluir-conta-confirmar');
 
       await waitForUrl(this.driver, '/login');
       await find(this.driver, 'aviso-conta-excluida');
 
-      await login(this.driver, user.email, user.password);
+      await login(this.driver, this.user.email, this.user.password);
       assert.match(await textOf(this.driver, 'login-erro'), /incorretos/);
     });
   });

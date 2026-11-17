@@ -5,8 +5,9 @@
  */
 const assert = require('assert');
 const config = require('./support/config');
-const { createDriver, closeDriver, byTest, find } = require('./support/driver');
-const { registerAndEnter, login, logout, createPost, waitForPost, inCard } = require('./support/actions');
+const { byTest, find } = require('./support/driver');
+const { createPost, waitForPost, inCard } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
@@ -34,15 +35,12 @@ async function toggleLike(driver, card, liked) {
 }
 
 describe('CRUD de Curtida', function () {
+  // Login uma vez: o autor publica e curte; o visitante (outro navegador) também curte.
+  const s = useSessions(['autor', 'visitante']);
+
   beforeEach(async function () {
-    this.driver = await createDriver();
-    this.user = await registerAndEnter(this.driver);
     this.postText = unique('Publicação para curtir');
     await createPost(this.driver, this.postText);
-  });
-
-  afterEach(async function () {
-    await closeDriver(this);
   });
 
   it('CT-07.1 curte uma publicação e o contador vai para 1', async function () {
@@ -74,30 +72,28 @@ describe('CRUD de Curtida', function () {
   });
 
   it('CT-07.4 outro usuário curte e a lista mostra quem curtiu', async function () {
-    let card = await waitForPost(this.driver, this.postText);
-    await toggleLike(this.driver, card, true);
-    await logout(this.driver);
+    const authorCard = await waitForPost(this.driver, this.postText);
+    await toggleLike(this.driver, authorCard, true);
 
-    const visitor = await registerAndEnter(this.driver);
-    card = await waitForPost(this.driver, this.postText);
-    await waitForLikes(this.driver, card, 1);
-    await toggleLike(this.driver, card, true);
-    await waitForLikes(this.driver, card, 2);
+    const visitor = s.visitante.driver;
+    const card = await waitForPost(visitor, this.postText);
+    await waitForLikes(visitor, card, 1);
+    await toggleLike(visitor, card, true);
+    await waitForLikes(visitor, card, 2);
+    // O autor vê a segunda curtida chegar em tempo real
+    await waitForLikes(this.driver, authorCard, 2);
 
     await (await inCard(card, 'publicacao-curtidas-contagem')).click();
-    const list = await this.driver.wait(
+    const list = await visitor.wait(
       async () => (await card.findElements(byTest('publicacao-curtidas-lista')))[0],
       config.WAIT,
       'Lista de curtidas não apareceu',
     );
     const names = await Promise.all((await list.findElements(byTest('curtida-nome'))).map((el) => el.getText()));
-    assert.deepStrictEqual(names.sort(), [this.user.name, visitor.name].sort());
+    assert.deepStrictEqual(names.sort(), [this.user.name, s.visitante.user.name].sort());
   });
 
   it('CT-07.5 cada usuário só conta uma curtida por publicação', async function () {
-    await logout(this.driver);
-    await login(this.driver, this.user.email, this.user.password);
-    await find(this.driver, 'usuario-logado');
     const card = await waitForPost(this.driver, this.postText);
     await toggleLike(this.driver, card, true);
     await toggleLike(this.driver, card, false);
