@@ -7,8 +7,9 @@
 const assert = require('assert');
 const { By } = require('selenium-webdriver');
 const config = require('./support/config');
-const { createDriver, closeDriver, byTest, click, find, textOf, type, waitForUrl, waitForText } = require('./support/driver');
-const { open, registerAndEnter } = require('./support/actions');
+const { byTest, click, find, textOf, type, waitForUrl, waitForText } = require('./support/driver');
+const { open } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -53,24 +54,15 @@ async function waitForPhase(driver, phase, timeout = 15000) {
 }
 
 describe('CRUD de Sala de Foco', function () {
-  beforeEach(async function () {
-    this.driver = await createDriver();
-    this.user = await registerAndEnter(this.driver);
+  // Login uma vez: o dono cria as salas; o participante (outro navegador) entra nelas.
+  const s = useSessions(['dono', 'participante']);
+
+  beforeEach(function () {
     this.room = unique('Revisão para a P2');
   });
 
-  afterEach(async function () {
-    await closeDriver(this);
-    await this.other?.quit().catch(() => undefined);
-    this.other = undefined;
-  });
-
-  /** Segundo navegador, com outro usuário (para testes com duas pessoas). */
-  async function secondUser(ctx) {
-    ctx.other = await createDriver();
-    await registerAndEnter(ctx.other);
-    return ctx.other;
-  }
+  /** Navegador da segunda pessoa, já logada desde o início do arquivo. */
+  const secondUser = () => s.participante.driver;
 
   describe('Criação, listagem, edição e exclusão (RF14)', function () {
     it('CT-14.1 cria uma sala e entra nela como participante', async function () {
@@ -91,7 +83,7 @@ describe('CRUD de Sala de Foco', function () {
 
     it('CT-14.3 outro usuário encontra a sala na lista e entra', async function () {
       await createRoom(this.driver, this.room);
-      const other = await secondUser(this);
+      const other = secondUser();
       await enterRoom(other, this.room);
       await waitForParticipants(other, 2);
     });
@@ -121,7 +113,7 @@ describe('CRUD de Sala de Foco', function () {
 
     it('CT-14.6 quem não é dono não vê editar, excluir nem os controles do cronômetro', async function () {
       await createRoom(this.driver, this.room);
-      const other = await secondUser(this);
+      const other = secondUser();
       await enterRoom(other, this.room);
       for (const name of ['sala-editar', 'sala-excluir', 'timer-iniciar']) {
         assert.strictEqual((await other.findElements(byTest(name))).length, 0, `"${name}" não deveria aparecer`);
@@ -132,7 +124,7 @@ describe('CRUD de Sala de Foco', function () {
   describe('Participantes em tempo real (RF15)', function () {
     it('CT-15.1 a lista de participantes atualiza quando alguém entra e sai', async function () {
       await createRoom(this.driver, this.room);
-      const other = await secondUser(this);
+      const other = secondUser();
       await enterRoom(other, this.room);
       await waitForParticipants(this.driver, 2);
       await (await other.findElement(byTest('sala-sair'))).click();
@@ -178,7 +170,7 @@ describe('CRUD de Sala de Foco', function () {
 
     it('CT-16.4 o cronômetro é o mesmo para todos os participantes (diferença de até 2 s)', async function () {
       await createRoom(this.driver, this.room);
-      const other = await secondUser(this);
+      const other = secondUser();
       await enterRoom(other, this.room);
       await click(this.driver, 'timer-iniciar');
       await other.wait(async () => (await textOf(other, 'timer-fase')) === 'Foco', config.WAIT, 'O outro participante não viu o início');

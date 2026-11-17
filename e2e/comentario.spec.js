@@ -6,8 +6,9 @@
 const assert = require('assert');
 const { By } = require('selenium-webdriver');
 const config = require('./support/config');
-const { createDriver, closeDriver, byTest, click, find, type } = require('./support/driver');
-const { registerAndEnter, login, logout, createPost, waitForPost, inCard } = require('./support/actions');
+const { byTest, click, type } = require('./support/driver');
+const { createPost, waitForPost, inCard } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
@@ -38,15 +39,12 @@ async function commentIsGone(driver, card, text) {
 }
 
 describe('CRUD de Comentário', function () {
+  // Login uma vez: o autor publica; o visitante (outro navegador) comenta nas publicações dele.
+  const s = useSessions(['autor', 'visitante']);
+
   beforeEach(async function () {
-    this.driver = await createDriver();
-    this.user = await registerAndEnter(this.driver);
     this.postText = unique('Publicação para comentar');
     await createPost(this.driver, this.postText);
-  });
-
-  afterEach(async function () {
-    await closeDriver(this);
   });
 
   describe('Criação e listagem (RF08)', function () {
@@ -101,32 +99,27 @@ describe('CRUD de Comentário', function () {
     });
 
     it('CT-08.6 outro usuário comenta, mas não pode editar comentários alheios', async function () {
-      let card = await openComments(this.driver, this.postText);
+      const card = await openComments(this.driver, this.postText);
       const mine = unique('Comentário do autor');
       await addComment(this.driver, card, mine);
-      await logout(this.driver);
 
-      await registerAndEnter(this.driver);
-      card = await openComments(this.driver, this.postText);
-      const theirs = await waitForComment(this.driver, card, mine);
+      const visitor = s.visitante.driver;
+      const visitorCard = await openComments(visitor, this.postText);
+      const theirs = await waitForComment(visitor, visitorCard, mine);
       assert.strictEqual((await theirs.findElements(byTest('comentario-editar'))).length, 0);
       assert.strictEqual((await theirs.findElements(byTest('comentario-excluir'))).length, 0);
-      const own = await addComment(this.driver, card, unique('Comentário do visitante'));
+      const own = await addComment(visitor, visitorCard, unique('Comentário do visitante'));
       await own.findElement(byTest('comentario-editar'));
     });
 
     it('CT-08.7 o autor da publicação pode excluir o comentário de outra pessoa', async function () {
-      await logout(this.driver);
-      await registerAndEnter(this.driver);
-      let card = await openComments(this.driver, this.postText);
+      const visitor = s.visitante.driver;
+      const visitorCard = await openComments(visitor, this.postText);
       const text = unique('Comentário inadequado');
-      await addComment(this.driver, card, text);
-      await logout(this.driver);
+      await addComment(visitor, visitorCard, text);
 
-      // Volta como autor da publicação
-      await login(this.driver, this.user.email, this.user.password);
-      await find(this.driver, 'usuario-logado');
-      card = await openComments(this.driver, this.postText);
+      // O autor da publicação, no navegador dele, vê o comentário chegar e o exclui
+      const card = await openComments(this.driver, this.postText);
       const comment = await waitForComment(this.driver, card, text);
       assert.strictEqual((await comment.findElements(byTest('comentario-editar'))).length, 0);
       await (await comment.findElement(byTest('comentario-excluir'))).click();
