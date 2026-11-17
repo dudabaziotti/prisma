@@ -176,3 +176,29 @@ export type RoomAccess = 'public' | 'followers';
 
 /** Resultado da tentativa de entrar numa sala. */
 export type JoinResult = 'joined' | 'full' | 'followers-only';
+
+/** Notificações (RF12). */
+export type NotificationType = 'like' | 'comment' | 'reply' | 'follow';
+
+export interface AppNotification {
+  id: string;
+  recipientId: string;
+  actorId: string;
+  actorName: string;
+  actorAvatar: string;
+  type: NotificationType;
+  postId: string | null;
+  /** Trecho da publicação curtida ou do comentário, para dar contexto. */
+  excerpt: string;
+  read: boolean;
+  createdAt: Date | null;
+}
+
+export interface NotificationInput {
+  recipientId: string;
+  type: NotificationType;
+  postId?: string | null;
+  excerpt?: string;
+}
+
+export const MAX_NOTIFICATIONS = 50;
