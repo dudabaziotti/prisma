@@ -43,10 +43,12 @@ export class PerfilPage {
   );
 
   // Seguidores (RF09)
-  readonly followers = toSignal(
+  /** `undefined` enquanto a lista carrega. */
+  private readonly followersList = toSignal(
     toObservable(this.targetUid).pipe(switchMap((uid) => (uid ? this.followService.watchFollowers(uid) : of([])))),
-    { initialValue: [] },
   );
+  readonly followers = computed(() => this.followersList() ?? []);
+  readonly followersLoaded = computed(() => this.followersList() !== undefined);
   readonly following = toSignal(
     toObservable(this.targetUid).pipe(switchMap((uid) => (uid ? this.followService.watchFollowing(uid) : of([])))),
     { initialValue: [] },
