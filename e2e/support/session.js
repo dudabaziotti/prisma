@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { logging } = require('selenium-webdriver');
 const path = require('path');
 const { SCREENSHOTS, createDriver, waitForText } = require('./driver');
 const { newUser, open, registerAndEnter } = require('./actions');
@@ -53,6 +54,9 @@ function useSessions(roles, { login = true } = {}) {
     for (const [role, { driver }] of Object.entries(sessions)) {
       const image = await driver.takeScreenshot().catch(() => null);
       if (image) fs.writeFileSync(path.join(SCREENSHOTS, `${base}_${role}.png`), image, 'base64');
+      const logs = await driver.manage().logs().get(logging.Type.BROWSER).catch(() => []);
+      const text = logs.map((l) => `${new Date(l.timestamp).toISOString()} ${l.level.name} ${l.message}`).join('\n');
+      fs.writeFileSync(path.join(SCREENSHOTS, `${base}_${role}_console.log`), text || '(console vazio)');
     }
   });
 
