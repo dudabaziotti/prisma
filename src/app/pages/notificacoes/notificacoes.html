@@ -1,0 +1,70 @@
+<main class="page">
+  <section class="card">
+    <div class="head">
+      <div>
+        <h1 class="title">Notificações</h1>
+        <p class="muted intro" data-test="notificacoes-resumo">
+          @if (unread()) {
+            {{ unread() }} {{ unread() === 1 ? 'notificação não lida' : 'notificações não lidas' }}
+          } @else {
+            Tudo em dia.
+          }
+        </p>
+      </div>
+      @if (notifications()?.length) {
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" (click)="markAllRead()" [disabled]="!unread() || busy()" data-test="notificacoes-marcar-todas">
+            Marcar todas como lidas
+          </button>
+          <button class="btn btn-link danger" type="button" (click)="confirmingClear.set(true)" [disabled]="busy()" data-test="notificacoes-limpar">
+            Limpar todas
+          </button>
+        </div>
+      }
+    </div>
+
+    @if (confirmingClear()) {
+      <div class="confirm" data-test="notificacoes-confirmar-limpeza">
+        <span>Excluir todas as notificações? Não dá para desfazer.</span>
+        <div class="actions">
+          <button class="btn btn-ghost" type="button" (click)="confirmingClear.set(false)" data-test="notificacoes-limpar-cancelar">Cancelar</button>
+          <button class="btn btn-danger" type="button" (click)="clear()" [disabled]="busy()" data-test="notificacoes-limpar-confirmar">Excluir todas</button>
+        </div>
+      </div>
+    }
+    @if (error()) {
+      <p class="error" role="alert" data-test="notificacoes-erro">{{ error() }}</p>
+    }
+  </section>
+
+  @if (notifications(); as list) {
+    @if (list.length) {
+      <section class="card list">
+        @for (n of list; track n.id) {
+          <article class="item" [class.unread]="!n.read" data-test="notificacao" [attr.data-read]="n.read" [attr.data-type]="n.type">
+            <img class="avatar sm" [src]="avatarUrl(n.actorAvatar)" alt="" />
+            <button class="body" type="button" (click)="open(n)" data-test="notificacao-abrir">
+              <span data-test="notificacao-texto"><strong>{{ n.actorName }}</strong> {{ message(n) }}</span>
+              @if (n.excerpt) {
+                <span class="excerpt" data-test="notificacao-trecho">“{{ n.excerpt }}”</span>
+              }
+              @if (n.createdAt) {
+                <span class="muted small">{{ n.createdAt | date: "dd/MM/yyyy 'às' HH:mm" }}</span>
+              }
+            </button>
+            <div class="item-actions">
+              @if (!n.read) {
+                <button class="btn btn-link" type="button" (click)="markRead(n)" [disabled]="busy()" data-test="notificacao-marcar-lida">Marcar como lida</button>
+              }
+              <button class="btn btn-link danger" type="button" (click)="remove(n)" [disabled]="busy()" data-test="notificacao-excluir" aria-label="Excluir notificação">Excluir</button>
+            </div>
+          </article>
+        }
+      </section>
+    } @else {
+      <p class="empty" data-test="notificacoes-vazio">Nenhuma notificação. Quando alguém curtir, comentar ou seguir você, aparece aqui.</p>
+    }
+  } @else {
+    <p class="empty">Carregando notificações...</p>
+  }
+</main>

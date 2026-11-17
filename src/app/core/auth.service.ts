@@ -120,7 +120,10 @@ export class AuthService {
     // 6. Vínculos de seguidores: quem o usuário segue e quem segue o usuário.
     await deleteRefs(await refsOf(query(collection(db, 'follows'), where('followerId', '==', uid))));
     await deleteRefs(await refsOf(query(collection(db, 'follows'), where('followedId', '==', uid))));
-    // 7. Perfil.
+    // 7. Notificações recebidas e enviadas pelo usuário.
+    await deleteRefs(await refsOf(query(collection(db, 'notifications'), where('recipientId', '==', uid))));
+    await deleteRefs(await refsOf(query(collection(db, 'notifications'), where('actorId', '==', uid))));
+    // 8. Perfil.
     await deleteRefs([doc(db, 'users', uid)]);
 
     this.listenToProfile(null);

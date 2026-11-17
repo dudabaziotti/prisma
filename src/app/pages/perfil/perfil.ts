@@ -6,6 +6,7 @@ import { of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/firebase-errors';
 import { FollowService } from '../../core/follow.service';
+import { NotificationService } from '../../core/notification.service';
 import { UserProfile, avatarUrl } from '../../core/models';
 import { PostService } from '../../core/post.service';
 import { UserService } from '../../core/user.service';
@@ -23,6 +24,7 @@ export class PerfilPage {
   private readonly users = inject(UserService);
   private readonly postService = inject(PostService);
   private readonly followService = inject(FollowService);
+  private readonly notifications = inject(NotificationService);
 
   /** Parâmetro :uid da rota. */
   readonly uid = input<string>();
@@ -68,9 +70,14 @@ export class PerfilPage {
     const me = this.auth.profile();
     const target = this.profile();
     if (!me || !target || this.isOwn()) return;
-    await this.runFollow(() =>
-      this.amFollowing() ? this.followService.unfollow(me.uid, target.uid) : this.followService.follow(me, target),
-    );
+    await this.runFollow(async () => {
+      if (this.amFollowing()) {
+        await this.followService.unfollow(me.uid, target.uid);
+      } else {
+        await this.followService.follow(me, target);
+        void this.notifications.notify(me, { recipientId: target.uid, type: 'follow' });
+      }
+    });
   }
 
   /** No próprio perfil: remover um seguidor ou deixar de seguir alguém da lista. */

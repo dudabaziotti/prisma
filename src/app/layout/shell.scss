@@ -45,3 +45,8 @@ nav {
   .me-name, .brand span { display: none; }
   .topbar-inner { gap: 10px; }
 }
+.badge {
+  display: inline-block; min-width: 18px; padding: 1px 5px; margin-left: 2px;
+  border-radius: 999px; background: var(--danger); color: #fff;
+  font-size: 0.72rem; font-weight: 600; line-height: 16px; text-align: center; vertical-align: 1px;
+}

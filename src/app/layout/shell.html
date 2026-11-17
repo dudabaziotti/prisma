@@ -10,7 +10,13 @@
       <a routerLink="/salas" routerLinkActive="active" data-test="nav-salas">Salas de foco</a>
       <a routerLink="/disciplinas" routerLinkActive="active" data-test="nav-disciplinas">Disciplinas</a>
       <a routerLink="/ranking" routerLinkActive="active" data-test="nav-ranking">Ranking</a>
-      <a routerLink="/perfil" routerLinkActive="active" data-test="nav-perfil">Meu perfil</a>
+      <a routerLink="/notificacoes" routerLinkActive="active" data-test="nav-notificacoes">
+        Notificações
+        @if (unread()) {
+          <span class="badge" data-test="nav-notificacoes-contagem" [attr.aria-label]="unread() + ' não lidas'">{{ unread() > 9 ? '9+' : unread() }}</span>
+        }
+      </a>
+      <a routerLink="/perfil" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="active" data-test="nav-perfil">Meu perfil</a>
     </nav>
 
     <div class="me">

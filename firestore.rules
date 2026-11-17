@@ -10,6 +10,7 @@ rules_version = '2';
 // - Cada usuário curte uma publicação uma vez só e só remove a própria curtida (o autor da publicação também pode).
 // - Cada um segue em nome próprio; quem segue deixa de seguir e quem é seguido pode remover o seguidor.
 // - Sala "só para seguidores" (RF17): só entra quem segue o dono da sala.
+// - Notificações: cada um lê, marca como lida e exclui só as próprias; ninguém notifica em nome de outro.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -168,6 +169,23 @@ service cloud.firestore {
         && request.resource.data.followerId == resource.data.followerId
         && request.resource.data.followedId == resource.data.followedId;
       allow delete: if isOwner(resource.data.followerId) || isOwner(resource.data.followedId);
+    }
+
+    match /notifications/{notificationId} {
+      // Quem enviou também lê (para atualizar o próprio nome e excluir a conta).
+      allow read: if isOwner(resource.data.recipientId) || isOwner(resource.data.actorId);
+      allow create: if signedIn()
+        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.recipientId is string
+        && request.resource.data.recipientId != request.auth.uid
+        && request.resource.data.type in ['like', 'comment', 'reply', 'follow']
+        && request.resource.data.read == false
+        && request.resource.data.excerpt is string && request.resource.data.excerpt.size() <= 100;
+      allow update: if (isOwner(resource.data.recipientId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']))
+        || (isOwner(resource.data.actorId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actorName', 'actorAvatar']));
+      allow delete: if isOwner(resource.data.recipientId) || isOwner(resource.data.actorId);
     }
 
     // Consultas em todas as participações (exclusão de conta).

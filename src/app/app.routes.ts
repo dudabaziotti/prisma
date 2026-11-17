@@ -5,6 +5,7 @@ import { CadastroPage } from './pages/cadastro/cadastro';
 import { DisciplinasPage } from './pages/disciplinas/disciplinas';
 import { FeedPage } from './pages/feed/feed';
 import { LoginPage } from './pages/login/login';
+import { NotificacoesPage } from './pages/notificacoes/notificacoes';
 import { PerfilEditarPage } from './pages/perfil-editar/perfil-editar';
 import { PerfilPage } from './pages/perfil/perfil';
 import { RankingPage } from './pages/ranking/ranking';
@@ -28,6 +29,7 @@ export const routes: Routes = [
       { path: 'salas/:id', component: SalaPage, title: 'Sala de foco | Prisma' },
       { path: 'disciplinas', component: DisciplinasPage, title: 'Disciplinas | Prisma' },
       { path: 'ranking', component: RankingPage, title: 'Ranking semanal | Prisma' },
+      { path: 'notificacoes', component: NotificacoesPage, title: 'Notificações | Prisma' },
     ],
   },
   { path: '**', redirectTo: '' },
