@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { errorMessage } from '../../core/firebase-errors';
 import { PostInput, SUBJECT_SUGGESTIONS } from '../../core/models';
+import { SubjectService, sameSubjectName } from '../../core/subject.service';
 
 export const MAX_POST_LENGTH = 2000;
 
@@ -25,7 +26,12 @@ export class PostForm implements OnInit {
   readonly testPrefix = input('post');
   readonly cancel = output<void>();
 
-  readonly subjects = SUBJECT_SUGGESTIONS;
+  private readonly catalog = toSignal(inject(SubjectService).watchAll(), { initialValue: [] });
+  /** Sugestões de disciplina: as do catálogo primeiro, depois as padrão que ainda não estão nele. */
+  readonly subjects = computed(() => {
+    const names = this.catalog().map((s) => s.name);
+    return [...names, ...SUBJECT_SUGGESTIONS.filter((d) => !names.some((n) => sameSubjectName(n, d)))];
+  });
   readonly max = MAX_POST_LENGTH;
   readonly listId = `disciplinas-${Math.random().toString(36).slice(2, 8)}`;
 

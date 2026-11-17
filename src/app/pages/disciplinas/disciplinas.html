@@ -1,0 +1,83 @@
+<main class="page">
+  <section class="card">
+    <h1 class="title">Disciplinas</h1>
+    <p class="muted intro">Catálogo de disciplinas usado para categorizar publicações. Qualquer pessoa pode sugerir uma nova.</p>
+
+    <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+      <div class="row">
+        <label class="field">
+          <span>Nome</span>
+          <input type="text" formControlName="name" maxlength="60" placeholder="Ex.: Cálculo I" data-test="disciplina-nova-nome" />
+        </label>
+        <label class="field grow">
+          <span>Descrição (opcional)</span>
+          <input type="text" formControlName="description" maxlength="200" placeholder="Ex.: Limites, derivadas e integrais" data-test="disciplina-nova-descricao" />
+        </label>
+        <button class="btn btn-primary" type="submit" [disabled]="!canCreate() || creating()" data-test="disciplina-nova-criar">
+          {{ creating() ? 'Salvando...' : 'Adicionar' }}
+        </button>
+      </div>
+    </form>
+    @if (error()) {
+      <p class="error" role="alert" data-test="disciplina-nova-erro">{{ error() }}</p>
+    }
+  </section>
+
+  @if (subjects(); as list) {
+    <section class="card list">
+      @for (s of list; track s.id) {
+        <div class="item" data-test="disciplina" [attr.data-subject-id]="s.id">
+          @if (editingId() === s.id) {
+            <form [formGroup]="editForm" (ngSubmit)="saveEdit(s)" class="edit" novalidate>
+              <div class="row">
+                <label class="field">
+                  <span>Nome</span>
+                  <input type="text" formControlName="name" maxlength="60" data-test="disciplina-edicao-nome" />
+                </label>
+                <label class="field grow">
+                  <span>Descrição</span>
+                  <input type="text" formControlName="description" maxlength="200" data-test="disciplina-edicao-descricao" />
+                </label>
+              </div>
+              <div class="actions">
+                <button class="btn btn-ghost" type="button" (click)="editingId.set(null)" data-test="disciplina-edicao-cancelar">Cancelar</button>
+                <button class="btn btn-primary" type="submit" [disabled]="editForm.invalid || busy()" data-test="disciplina-edicao-salvar">Salvar</button>
+              </div>
+            </form>
+          } @else {
+            <div class="info">
+              <strong data-test="disciplina-nome">{{ s.name }}</strong>
+              @if (s.description) {
+                <span class="muted" data-test="disciplina-descricao">{{ s.description }}</span>
+              }
+              <span class="muted small">Adicionada por {{ s.createdByName }}</span>
+            </div>
+            @if (s.createdBy === uid()) {
+              <div class="owner-actions">
+                <button class="btn btn-link" type="button" (click)="startEdit(s)" data-test="disciplina-editar">Editar</button>
+                <button class="btn btn-link danger" type="button" (click)="askDelete(s)" data-test="disciplina-excluir">Excluir</button>
+              </div>
+            }
+          }
+
+          @if (confirmingDelete() === s.id) {
+            <div class="confirm" data-test="disciplina-confirmar-exclusao">
+              <span>Excluir a disciplina "{{ s.name }}"? As publicações já feitas continuam com o nome dela.</span>
+              <div class="actions">
+                <button class="btn btn-ghost" type="button" (click)="confirmingDelete.set(null)" data-test="disciplina-exclusao-cancelar">Cancelar</button>
+                <button class="btn btn-danger" type="button" [disabled]="busy()" (click)="remove(s)" data-test="disciplina-exclusao-confirmar">Excluir</button>
+              </div>
+            </div>
+          }
+          @if ((editingId() === s.id || confirmingDelete() === s.id) && itemError()) {
+            <p class="error" role="alert" data-test="disciplina-erro">{{ itemError() }}</p>
+          }
+        </div>
+      } @empty {
+        <p class="empty" data-test="disciplinas-vazio">Nenhuma disciplina cadastrada ainda.</p>
+      }
+    </section>
+  } @else {
+    <p class="empty">Carregando disciplinas...</p>
+  }
+</main>

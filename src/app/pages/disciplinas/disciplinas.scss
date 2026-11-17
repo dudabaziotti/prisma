@@ -1,0 +1,27 @@
+.intro { margin: 4px 0 16px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto; gap: 12px; align-items: end; }
+.row .field { margin-bottom: 0; }
+.row input { width: 100%; }
+.row .btn { white-space: nowrap; }
+.edit .row { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.edit .actions { margin-top: 10px; }
+.list { padding: 0; }
+.item {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+}
+.item:last-child { border-bottom: 0; }
+.item > form, .item > .confirm, .item > .error { flex-basis: 100%; }
+.info { display: flex; flex-direction: column; gap: 2px; }
+.info strong { color: var(--dark-blue); }
+.small { font-size: 0.78rem; }
+.owner-actions { display: flex; gap: 2px; }
+.confirm {
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--danger-soft); color: var(--danger); padding: 12px; border-radius: 8px; font-size: 0.9rem;
+}
+.error { margin: 12px 0 0; }
+.empty { padding: 24px; margin: 0; }
+@media (max-width: 640px) {
+  .row, .edit .row { grid-template-columns: 1fr; }
+}
