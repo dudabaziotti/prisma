@@ -4,20 +4,15 @@
  * Só o autor pode editar ou excluir a própria publicação.
  */
 const assert = require('assert');
-const { createDriver, closeDriver, byTest, click, find, type } = require('./support/driver');
-const { registerAndEnter, logout, createPost, waitForPost, postIsGone, inCard } = require('./support/actions');
+const { byTest, click, find, type } = require('./support/driver');
+const { createPost, waitForPost, postIsGone, inCard } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 describe('CRUD de Publicação', function () {
-  beforeEach(async function () {
-    this.driver = await createDriver();
-    this.user = await registerAndEnter(this.driver);
-  });
-
-  afterEach(async function () {
-    await closeDriver(this);
-  });
+  // Login uma vez: o autor faz as publicações; o visitante (outro navegador) confere as permissões.
+  const s = useSessions(['autor', 'visitante']);
 
   describe('Criação (RF04, RF05)', function () {
     it('CT-04.1 cria uma publicação que aparece no feed com autor e data', async function () {
@@ -94,10 +89,8 @@ describe('CRUD de Publicação', function () {
     it('CT-18.4 outro usuário não vê os botões de editar e excluir', async function () {
       const text = unique('Publicação de outra pessoa');
       await createPost(this.driver, text);
-      await logout(this.driver);
 
-      await registerAndEnter(this.driver);
-      const card = await waitForPost(this.driver, text);
+      const card = await waitForPost(s.visitante.driver, text);
       assert.strictEqual((await card.findElements(byTest('publicacao-editar'))).length, 0);
       assert.strictEqual((await card.findElements(byTest('publicacao-excluir'))).length, 0);
     });

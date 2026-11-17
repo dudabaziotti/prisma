@@ -6,8 +6,9 @@
 const assert = require('assert');
 const { By } = require('selenium-webdriver');
 const config = require('./support/config');
-const { createDriver, closeDriver, byTest, click, find, textOf, type } = require('./support/driver');
-const { open, registerAndEnter, logout } = require('./support/actions');
+const { byTest, click, find, textOf, type } = require('./support/driver');
+const { open } = require('./support/actions');
+const { useSessions } = require('./support/session');
 
 const unique = (text) => `${text} ${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
@@ -30,14 +31,8 @@ async function subjectIsGone(driver, name) {
 }
 
 describe('CRUD de Disciplinas', function () {
-  beforeEach(async function () {
-    this.driver = await createDriver();
-    this.user = await registerAndEnter(this.driver);
-  });
-
-  afterEach(async function () {
-    await closeDriver(this);
-  });
+  // Login uma vez: quem cria as disciplinas e outra pessoa (outro navegador) para conferir as permissões.
+  const s = useSessions(['criador', 'visitante']);
 
   it('CT-05.2 adiciona uma disciplina ao catálogo', async function () {
     const name = unique('Cálculo');
@@ -80,10 +75,8 @@ describe('CRUD de Disciplinas', function () {
   it('CT-05.6 outro usuário não pode editar nem excluir a disciplina', async function () {
     const name = unique('Álgebra');
     await addSubject(this.driver, name);
-    await logout(this.driver);
-    await registerAndEnter(this.driver);
-    await open(this.driver, '/disciplinas');
-    const item = await waitForSubject(this.driver, name);
+    await open(s.visitante.driver, '/disciplinas');
+    const item = await waitForSubject(s.visitante.driver, name);
     assert.strictEqual((await item.findElements(byTest('disciplina-editar'))).length, 0);
     assert.strictEqual((await item.findElements(byTest('disciplina-excluir'))).length, 0);
   });

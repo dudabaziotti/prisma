@@ -37,7 +37,7 @@
         <a class="btn btn-ghost edit" routerLink="/perfil/editar" data-test="perfil-editar">Editar perfil</a>
       } @else {
         <button class="btn edit" [class.btn-primary]="!amFollowing()" [class.btn-ghost]="amFollowing()" type="button"
-          (click)="toggleFollow()" [disabled]="followBusy()" [attr.aria-pressed]="amFollowing()" data-test="perfil-seguir">
+          (click)="toggleFollow()" [disabled]="followBusy()" [attr.aria-pressed]="amFollowing()" [attr.data-loaded]="followersLoaded()" data-test="perfil-seguir">
           {{ amFollowing() ? 'Deixar de seguir' : 'Seguir' }}
         </button>
       }
