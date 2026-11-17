@@ -21,9 +21,17 @@ async function waitForLikes(driver, card, count) {
   );
 }
 
+/**
+ * Espera a curtida mudar e o servidor confirmar. O Firestore mostra o resultado na tela na hora
+ * e confirma depois; durante a confirmação o botão fica desabilitado. Seguir antes disso (por
+ * exemplo, recarregar a página) perderia a curtida.
+ */
 async function waitForLiked(driver, card, liked) {
   await driver.wait(
-    async () => (await (await inCard(card, 'publicacao-curtir')).getAttribute('aria-pressed')) === String(liked),
+    async () => {
+      const button = await inCard(card, 'publicacao-curtir');
+      return (await button.getAttribute('aria-pressed')) === String(liked) && (await button.isEnabled());
+    },
     config.WAIT,
     liked ? 'Publicação não ficou curtida' : 'Publicação continua curtida',
   );
