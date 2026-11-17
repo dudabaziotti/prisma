@@ -19,6 +19,13 @@
           }
         </datalist>
       </label>
+      <label class="field">
+        <span>Quem pode entrar</span>
+        <select formControlName="access" data-test="sala-nova-acesso">
+          <option value="public">Qualquer pessoa</option>
+          <option value="followers">Só quem me segue</option>
+        </select>
+      </label>
       <button class="btn btn-primary" type="submit" [disabled]="!canCreate() || creating() || !profile()" data-test="sala-nova-criar">
         {{ creating() ? 'Criando...' : 'Criar sala' }}
       </button>
@@ -38,6 +45,9 @@
               <span class="chip subject" data-test="sala-card-disciplina">{{ room.subject }}</span>
             }
             <span class="chip" [class.live]="room.timer.status === 'running'">{{ status(room) }}</span>
+            @if (room.access === 'followers') {
+              <span class="chip private" data-test="sala-card-acesso">Só seguidores</span>
+            }
           </div>
           <p class="muted small">Criada por {{ room.ownerName }}</p>
         </div>

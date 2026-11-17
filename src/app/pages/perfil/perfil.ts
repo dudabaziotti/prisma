@@ -4,6 +4,8 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { of, switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
+import { errorMessage } from '../../core/firebase-errors';
+import { FollowService } from '../../core/follow.service';
 import { UserProfile, avatarUrl } from '../../core/models';
 import { PostService } from '../../core/post.service';
 import { UserService } from '../../core/user.service';
@@ -20,6 +22,7 @@ export class PerfilPage {
   private readonly auth = inject(AuthService);
   private readonly users = inject(UserService);
   private readonly postService = inject(PostService);
+  private readonly followService = inject(FollowService);
 
   /** Parâmetro :uid da rota. */
   readonly uid = input<string>();
@@ -39,9 +42,67 @@ export class PerfilPage {
     ),
   );
 
+  // Seguidores (RF09)
+  /** `undefined` enquanto a lista carrega. */
+  private readonly followersList = toSignal(
+    toObservable(this.targetUid).pipe(switchMap((uid) => (uid ? this.followService.watchFollowers(uid) : of([])))),
+  );
+  readonly followers = computed(() => this.followersList() ?? []);
+  readonly followersLoaded = computed(() => this.followersList() !== undefined);
+  readonly following = toSignal(
+    toObservable(this.targetUid).pipe(switchMap((uid) => (uid ? this.followService.watchFollowing(uid) : of([])))),
+    { initialValue: [] },
+  );
+  /** O usuário logado segue este perfil. */
+  readonly amFollowing = computed(() => this.followers().some((f) => f.followerId === this.auth.uid()));
+  /** Este perfil segue o usuário logado. */
+  readonly followsMe = computed(() => this.following().some((f) => f.followedId === this.auth.uid()));
+  readonly list = signal<'followers' | 'following' | null>(null);
+  readonly followBusy = signal(false);
+  readonly followError = signal('');
+  readonly avatarOf = avatarUrl;
+
+  toggleList(which: 'followers' | 'following'): void {
+    this.list.set(this.list() === which ? null : which);
+  }
+
+  async toggleFollow(): Promise<void> {
+    const me = this.auth.profile();
+    const target = this.profile();
+    if (!me || !target || this.isOwn()) return;
+    await this.runFollow(() =>
+      this.amFollowing() ? this.followService.unfollow(me.uid, target.uid) : this.followService.follow(me, target),
+    );
+  }
+
+  /** No próprio perfil: remover um seguidor ou deixar de seguir alguém da lista. */
+  async removeFollower(followerId: string): Promise<void> {
+    const me = this.auth.uid();
+    if (me) await this.runFollow(() => this.followService.unfollow(followerId, me));
+  }
+
+  async stopFollowing(followedId: string): Promise<void> {
+    const me = this.auth.uid();
+    if (me) await this.runFollow(() => this.followService.unfollow(me, followedId));
+  }
+
+  private async runFollow(action: () => Promise<void>): Promise<void> {
+    if (this.followBusy()) return;
+    this.followBusy.set(true);
+    this.followError.set('');
+    try {
+      await action();
+    } catch (e) {
+      this.followError.set(errorMessage(e));
+    } finally {
+      this.followBusy.set(false);
+    }
+  }
+
   constructor() {
     effect(() => {
       const uid = this.targetUid();
+      this.list.set(null);
       if (!uid || this.isOwn()) return;
       this.other.set(undefined);
       this.users.getProfile(uid).then(

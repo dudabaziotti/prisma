@@ -1,5 +1,6 @@
 .profile { display: flex; gap: 20px; align-items: flex-start; position: relative; }
-.info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-right: 150px; }
+.info h1 { overflow-wrap: anywhere; }
 .info p { margin: 0; }
 .bio { white-space: pre-wrap; }
 .edit { position: absolute; top: 16px; right: 16px; text-decoration: none; }
@@ -7,5 +8,20 @@
 @media (max-width: 600px) {
   .profile { flex-direction: column; align-items: center; text-align: center; }
   .edit { position: static; }
+  .info { padding-right: 0; }
   .chips { justify-content: center; }
+}
+.follow-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 2px 0; }
+.follow-stats .stat { padding: 0; color: var(--text); font-size: 0.9rem; }
+.follow-stats .stat strong { color: var(--dark-blue); }
+.follow-stats .stat.active { text-decoration: underline; }
+.follow-list { display: flex; flex-direction: column; gap: 10px; }
+.list-title { font-size: 0.95rem; margin: 0 0 4px; }
+.person { display: flex; align-items: center; gap: 10px; }
+.person a { flex: 1; color: var(--dark-blue); font-weight: 600; text-decoration: none; }
+.person a:hover { text-decoration: underline; }
+.person .btn { padding: 4px 8px; }
+.follow-list p { margin: 0; }
+@media (max-width: 600px) {
+  .follow-stats { justify-content: center; }
 }

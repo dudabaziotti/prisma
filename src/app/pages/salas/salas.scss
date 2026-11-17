@@ -1,7 +1,7 @@
 .intro { margin: 4px 0 16px; }
-.create { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 12px; align-items: end; }
-.create input { width: 100%; }
-.create .btn { white-space: nowrap; }
+.create { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: end; }
+.create input, .create select { width: 100%; }
+.create .btn { white-space: nowrap; justify-self: end; }
 .create .field { margin-bottom: 0; }
 .room { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .room h2 { font-size: 1.05rem; margin-bottom: 6px; }
