@@ -55,7 +55,9 @@ export class DisciplinasPage {
     this.creating.set(true);
     try {
       await this.service.create(author, input);
-      this.form.reset();
+      // Só limpa se a pessoa não começou a digitar outra coisa enquanto salvava (mesmo cuidado do BUG-6).
+      const now = this.form.getRawValue();
+      if (now.name === input.name && now.description === input.description) this.form.reset();
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {
