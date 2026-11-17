@@ -58,12 +58,14 @@ async function clearField(driver, el) {
 }
 
 async function type(driver, name, text) {
+  await new Promise((r) => setTimeout(r, Number(process.env.SLOW_MS || 0)));
   const el = await find(driver, name);
   await clearField(driver, el);
   await el.sendKeys(text);
 }
 
 async function click(driver, name) {
+  await new Promise((r) => setTimeout(r, Number(process.env.SLOW_MS || 0)));
   const el = await find(driver, name);
   await driver.wait(until.elementIsEnabled(el), config.WAIT, `Botão "${name}" continuou desabilitado`);
   await el.click();
