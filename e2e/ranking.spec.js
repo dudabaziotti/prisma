@@ -87,7 +87,10 @@ describe('Relatório Ranking semanal', function () {
 
     const card = await waitForPost(visitor, text);
     await (await inCard(card, 'publicacao-curtir')).click();
-    await visitor.wait(async () => (await (await inCard(card, 'publicacao-curtir')).getAttribute('aria-pressed')) === 'true', config.WAIT);
+    await visitor.wait(async () => {
+      const button = await inCard(card, 'publicacao-curtir');
+      return (await button.getAttribute('aria-pressed')) === 'true' && (await button.isEnabled());
+    }, config.WAIT);
     await (await inCard(card, 'publicacao-comentarios')).click();
     const field = await visitor.wait(async () => (await card.findElements(byTest('comentario-novo-conteudo')))[0], config.WAIT);
     await field.sendKeys('Muito bom!');
@@ -108,7 +111,10 @@ describe('Relatório Ranking semanal', function () {
     const before = await snapshot(this.driver, this.user.name);
     const card = await createPost(this.driver, unique('Minha publicação'));
     await (await inCard(card, 'publicacao-curtir')).click();
-    await this.driver.wait(async () => (await (await inCard(card, 'publicacao-curtir')).getAttribute('aria-pressed')) === 'true', config.WAIT);
+    await this.driver.wait(async () => {
+      const button = await inCard(card, 'publicacao-curtir');
+      return (await button.getAttribute('aria-pressed')) === 'true' && (await button.isEnabled());
+    }, config.WAIT);
     await openRanking(this.driver);
     const after = await rowOf(this.driver, this.user.name);
     assert.deepStrictEqual(delta(after, before), { posts: 1, comments: 0, likes: 0, points: 3 });
