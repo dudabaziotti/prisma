@@ -11,6 +11,9 @@
               @if (r.subject) {
                 <span class="chip subject" data-test="sala-disciplina">{{ r.subject }}</span>
               }
+              @if (r.access === 'followers') {
+                <span class="chip private" data-test="sala-acesso">Só seguidores</span>
+              }
             </div>
             <p class="muted small">Criada por <span data-test="sala-dono">{{ r.ownerName }}</span></p>
           </div>
@@ -34,6 +37,13 @@
             <span>Disciplina (opcional)</span>
             <input type="text" formControlName="subject" maxlength="60" data-test="sala-edicao-disciplina" />
           </label>
+          <label class="field">
+            <span>Quem pode entrar</span>
+            <select formControlName="access" data-test="sala-edicao-acesso">
+              <option value="public">Qualquer pessoa</option>
+              <option value="followers">Só quem me segue</option>
+            </select>
+          </label>
           <div class="actions">
             <button class="btn btn-ghost" type="button" (click)="editing.set(false)" data-test="sala-edicao-cancelar">Cancelar</button>
             <button class="btn btn-primary" type="submit" [disabled]="editForm.invalid || busy()" data-test="sala-edicao-salvar">Salvar</button>
@@ -56,52 +66,60 @@
       <p class="error" role="alert" data-test="sala-cheia">Esta sala já tem {{ max }} participantes. Tente outra sala.</p>
     }
 
-    <div class="grid">
-      <section class="card timer" [attr.data-phase]="timer()?.phase" data-test="timer">
-        <p class="phase" data-test="timer-fase">{{ phaseLabel() }}</p>
-        <p class="clock" data-test="timer-tempo">{{ clock() }}</p>
-        <p class="muted" data-test="timer-ciclo">Ciclo {{ timer()?.cycle }} de 4</p>
+    @if (followersOnly()) {
+      <section class="card restricted" role="alert" data-test="sala-restrita">
+        <p><strong>Esta sala é só para seguidores de {{ r.ownerName }}.</strong></p>
+        <p class="muted">Siga {{ r.ownerName }} para poder entrar.</p>
+        <a class="btn btn-primary" [routerLink]="['/perfil', r.ownerId]" data-test="sala-ver-dono">Ver perfil de {{ r.ownerName }}</a>
+      </section>
+    } @else {
+      <div class="grid">
+        <section class="card timer" [attr.data-phase]="timer()?.phase" data-test="timer">
+          <p class="phase" data-test="timer-fase">{{ phaseLabel() }}</p>
+          <p class="clock" data-test="timer-tempo">{{ clock() }}</p>
+          <p class="muted" data-test="timer-ciclo">Ciclo {{ timer()?.cycle }} de 4</p>
 
-        @if (isOwner()) {
-          <div class="controls">
-            @switch (r.timer.status) {
-              @case ('idle') {
-                <button class="btn btn-primary" type="button" (click)="start()" [disabled]="busy()" data-test="timer-iniciar">Iniciar</button>
-              }
-              @case ('running') {
-                @if (timer()?.phase !== 'finished') {
-                  <button class="btn btn-primary" type="button" (click)="pause()" [disabled]="busy()" data-test="timer-pausar">Pausar</button>
+          @if (isOwner()) {
+            <div class="controls">
+              @switch (r.timer.status) {
+                @case ('idle') {
+                  <button class="btn btn-primary" type="button" (click)="start()" [disabled]="busy()" data-test="timer-iniciar">Iniciar</button>
                 }
-                <button class="btn btn-ghost" type="button" (click)="reset()" [disabled]="busy()" data-test="timer-reiniciar">Reiniciar</button>
+                @case ('running') {
+                  @if (timer()?.phase !== 'finished') {
+                    <button class="btn btn-primary" type="button" (click)="pause()" [disabled]="busy()" data-test="timer-pausar">Pausar</button>
+                  }
+                  <button class="btn btn-ghost" type="button" (click)="reset()" [disabled]="busy()" data-test="timer-reiniciar">Reiniciar</button>
+                }
+                @case ('paused') {
+                  <button class="btn btn-primary" type="button" (click)="resume()" [disabled]="busy()" data-test="timer-retomar">Retomar</button>
+                  <button class="btn btn-ghost" type="button" (click)="reset()" [disabled]="busy()" data-test="timer-reiniciar">Reiniciar</button>
+                }
               }
-              @case ('paused') {
-                <button class="btn btn-primary" type="button" (click)="resume()" [disabled]="busy()" data-test="timer-retomar">Retomar</button>
-                <button class="btn btn-ghost" type="button" (click)="reset()" [disabled]="busy()" data-test="timer-reiniciar">Reiniciar</button>
-              }
-            }
-          </div>
-        } @else {
-          <p class="muted small">O cronômetro é controlado por quem criou a sala.</p>
-        }
-      </section>
-
-      <section class="card people">
-        <h2 class="title">
-          Participantes <span class="muted" data-test="participantes-contagem">{{ participants().length }}/{{ max }}</span>
-        </h2>
-        <ul>
-          @for (p of participants(); track p.uid) {
-            <li data-test="participante" [attr.data-uid]="p.uid">
-              <img class="avatar sm" [src]="avatarUrl(p.avatar)" alt="" />
-              <span data-test="participante-nome">{{ p.name }}</span>
-              @if (p.uid === r.ownerId) {
-                <span class="chip">dono</span>
-              }
-            </li>
+            </div>
+          } @else {
+            <p class="muted small">O cronômetro é controlado por quem criou a sala.</p>
           }
-        </ul>
-      </section>
-    </div>
+        </section>
+
+        <section class="card people">
+          <h2 class="title">
+            Participantes <span class="muted" data-test="participantes-contagem">{{ participants().length }}/{{ max }}</span>
+          </h2>
+          <ul>
+            @for (p of participants(); track p.uid) {
+              <li data-test="participante" [attr.data-uid]="p.uid">
+                <img class="avatar sm" [src]="avatarUrl(p.avatar)" alt="" />
+                <span data-test="participante-nome">{{ p.name }}</span>
+                @if (p.uid === r.ownerId) {
+                  <span class="chip">dono</span>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      </div>
+    }
 
     @if (error()) {
       <p class="error" role="alert" data-test="sala-erro">{{ error() }}</p>

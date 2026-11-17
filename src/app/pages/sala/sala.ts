@@ -5,7 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/firebase-errors';
-import { MAX_PARTICIPANTS, avatarUrl } from '../../core/models';
+import { MAX_PARTICIPANTS, RoomAccess, avatarUrl } from '../../core/models';
 import { POMODORO, formatClock, pomodoroState } from '../../core/pomodoro';
 import { HEARTBEAT_MS, RoomService, isActive } from '../../core/room.service';
 
@@ -61,6 +61,8 @@ export class SalaPage implements OnInit, OnDestroy {
   // Entrada na sala
   readonly joined = signal(false);
   readonly full = signal(false);
+  /** Sala só para seguidores e o usuário não segue o dono (RF17). */
+  readonly followersOnly = signal(false);
   private joining = false;
 
   // Edição e exclusão (só o dono)
@@ -71,6 +73,7 @@ export class SalaPage implements OnInit, OnDestroy {
   readonly editForm = inject(FormBuilder).nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
     subject: ['', Validators.maxLength(60)],
+    access: ['public' as RoomAccess],
   });
 
   private tick?: ReturnType<typeof setInterval>;
@@ -82,16 +85,18 @@ export class SalaPage implements OnInit, OnDestroy {
     effect(() => {
       const room = this.room();
       const profile = this.auth.profile();
-      if (!room || !profile || this.joined() || this.full() || this.joining) return;
+      if (!room || !profile || this.joined() || this.full() || this.followersOnly() || this.joining) return;
       this.joining = true;
-      this.service.join(room.id, profile).then(
-        (ok) => {
+      this.service.join(room, profile).then(
+        (result) => {
           this.joining = false;
-          if (ok) {
+          if (result === 'joined') {
             this.joined.set(true);
             this.startHeartbeat(room.id, profile.uid);
-          } else {
+          } else if (result === 'full') {
             this.full.set(true);
+          } else {
+            this.followersOnly.set(true);
           }
         },
         (e) => {
@@ -127,7 +132,7 @@ export class SalaPage implements OnInit, OnDestroy {
   startEdit(): void {
     const room = this.room();
     if (!room) return;
-    this.editForm.setValue({ name: room.name, subject: room.subject });
+    this.editForm.setValue({ name: room.name, subject: room.subject, access: room.access });
     this.confirmingDelete.set(false);
     this.editing.set(true);
   }

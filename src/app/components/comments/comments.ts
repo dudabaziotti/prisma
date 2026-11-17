@@ -7,6 +7,7 @@ import { switchMap } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { CommentService } from '../../core/comment.service';
 import { errorMessage } from '../../core/firebase-errors';
+import { NotificationService } from '../../core/notification.service';
 import { Comment, MAX_COMMENT_LENGTH, avatarUrl } from '../../core/models';
 
 interface Thread {
@@ -22,6 +23,7 @@ interface Thread {
 export class Comments {
   private readonly auth = inject(AuthService);
   private readonly service = inject(CommentService);
+  private readonly notifications = inject(NotificationService);
 
   readonly postId = input.required<string>();
   readonly postAuthorId = input.required<string>();
@@ -68,8 +70,10 @@ export class Comments {
     async send(): Promise<void> {
     await this.run(async () => {
       const text = this.draft();
-      await this.service.create(this.postId(), this.author(), text);
+      const me = this.author();
+      await this.service.create(this.postId(), me, text);
       if (this.draft() === text) this.draft.set('');
+      void this.notifications.notify(me, { recipientId: this.postAuthorId(), type: 'comment', postId: this.postId(), excerpt: text });
     }, this.sending);
   }
 
@@ -80,8 +84,15 @@ export class Comments {
 
   async sendReply(parent: Comment): Promise<void> {
     await this.run(async () => {
-      await this.service.create(this.postId(), this.author(), this.replyDraft(), parent.id);
+      const me = this.author();
+      const text = this.replyDraft();
+      await this.service.create(this.postId(), me, text, parent.id);
       this.cancelAll();
+      // Avisa quem escreveu o comentário respondido e o autor da publicação (sem repetir ninguém).
+      void this.notifications.notify(me, { recipientId: parent.authorId, type: 'reply', postId: this.postId(), excerpt: text });
+      if (this.postAuthorId() !== parent.authorId) {
+        void this.notifications.notify(me, { recipientId: this.postAuthorId(), type: 'comment', postId: this.postId(), excerpt: text });
+      }
     });
   }
 

@@ -7,6 +7,7 @@ import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/firebase-errors';
 import { Post, PostInput, avatarUrl } from '../../core/models';
 import { LikeService } from '../../core/like.service';
+import { NotificationService } from '../../core/notification.service';
 import { PostService } from '../../core/post.service';
 import { Comments } from '../comments/comments';
 import { PostForm } from '../post-form/post-form';
@@ -22,6 +23,7 @@ export class PostCard {
   private readonly auth = inject(AuthService);
   private readonly posts = inject(PostService);
   private readonly likeService = inject(LikeService);
+  private readonly notifications = inject(NotificationService);
 
   readonly post = input.required<Post>();
 
@@ -58,7 +60,11 @@ export class PostCard {
     this.error.set('');
     try {
       if (this.liked()) await this.likeService.unlike(this.post().id, me.uid);
-      else await this.likeService.like(this.post().id, this.post().authorId, me);
+      else {
+        const post = this.post();
+        await this.likeService.like(post.id, post.authorId, me);
+        void this.notifications.notify(me, { recipientId: post.authorId, type: 'like', postId: post.id, excerpt: post.content });
+      }
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {

@@ -5,6 +5,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -16,7 +17,8 @@ import {
 import { Observable } from 'rxjs';
 import { db } from './firebase';
 import { deleteRefs } from './firestore-utils';
-import { MAX_PARTICIPANTS, Participant, Room, RoomInput, UserProfile } from './models';
+import { followId } from './follow.service';
+import { JoinResult, MAX_PARTICIPANTS, Participant, Room, RoomInput, UserProfile } from './models';
 import { elapsedMs } from './pomodoro';
 import { toDate } from './user.service';
 
@@ -32,6 +34,7 @@ function toRoom(id: string, data: DocumentData): Room {
     subject: data['subject'] ?? '',
     ownerId: data['ownerId'],
     ownerName: data['ownerName'] ?? '',
+    access: data['access'] === 'followers' ? 'followers' : 'public',
     timer: {
       status: timer['status'] ?? 'idle',
       startedAt: toDate(timer['startedAt']),
@@ -113,6 +116,7 @@ export class RoomService {
       subject: input.subject.trim(),
       ownerId: owner.uid,
       ownerName: owner.name,
+      access: input.access ?? 'public',
       timer: { status: 'idle', startedAt: null, elapsedMs: 0 },
       createdAt: serverTimestamp(),
       updatedAt: null,
@@ -124,6 +128,7 @@ export class RoomService {
     await updateDoc(doc(this.rooms, id), {
       name: input.name.trim(),
       subject: input.subject.trim(),
+      ...(input.access ? { access: input.access } : {}),
       updatedAt: serverTimestamp(),
     });
   }
@@ -135,8 +140,16 @@ export class RoomService {
     await deleteDoc(doc(this.rooms, id));
   }
 
-  /** Entra na sala. Devolve `false` se ela já estiver cheia (RNF09). */
-  async join(roomId: string, profile: UserProfile): Promise<boolean> {
+  /** Só quem segue o dono entra numa sala "só para seguidores" (RF17). O dono sempre entra. */
+  async canJoin(room: Room, uid: string): Promise<boolean> {
+    if (room.access !== 'followers' || room.ownerId === uid) return true;
+    return (await getDoc(doc(db, 'follows', followId(uid, room.ownerId)))).exists();
+  }
+
+  /** Entra na sala. Não entra se ela já estiver cheia (RNF09) ou se for só para seguidores (RF17). */
+  async join(room: Room, profile: UserProfile): Promise<JoinResult> {
+    const roomId = room.id;
+    if (!(await this.canJoin(room, profile.uid))) return 'followers-only';
     const snap = await getDocs(this.participants(roomId));
     const now = Date.now();
     const others = snap.docs.filter((d) => {
@@ -144,7 +157,7 @@ export class RoomService {
       const lastSeen = toDate(d.data()['lastSeen']);
       return !lastSeen || now - lastSeen.getTime() < PRESENCE_TIMEOUT_MS;
     });
-    if (others.length >= MAX_PARTICIPANTS) return false;
+    if (others.length >= MAX_PARTICIPANTS) return 'full';
 
     await setDoc(doc(this.participants(roomId), profile.uid), {
       uid: profile.uid,
@@ -153,7 +166,7 @@ export class RoomService {
       joinedAt: serverTimestamp(),
       lastSeen: serverTimestamp(),
     });
-    return true;
+    return 'joined';
   }
 
   async heartbeat(roomId: string, uid: string): Promise<void> {

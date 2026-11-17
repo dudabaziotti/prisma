@@ -48,7 +48,7 @@ export class UserService {
       await updateProfile(auth.currentUser, { displayName: changes.name });
     }
 
-    // Publicações, comentários, salas e disciplinas guardam o nome do autor; atualiza para refletir o novo perfil.
+    // Publicações, comentários, curtidas, salas, disciplinas, seguidores e notificações guardam o nome do autor; atualiza para refletir o novo perfil.
     const author = { authorName: changes.name, authorAvatar: changes.avatar };
     const posts = await getDocs(query(collection(db, 'posts'), where('authorId', '==', uid)));
     await updateRefs(posts.docs.map((d) => d.ref), author);
@@ -60,5 +60,11 @@ export class UserService {
     await updateRefs(likes.docs.map((d) => d.ref), { name: changes.name, avatar: changes.avatar });
     const subjects = await getDocs(query(collection(db, 'subjects'), where('createdBy', '==', uid)));
     await updateRefs(subjects.docs.map((d) => d.ref), { createdByName: changes.name });
+    const following = await getDocs(query(collection(db, 'follows'), where('followerId', '==', uid)));
+    await updateRefs(following.docs.map((d) => d.ref), { followerName: changes.name, followerAvatar: changes.avatar });
+    const followers = await getDocs(query(collection(db, 'follows'), where('followedId', '==', uid)));
+    await updateRefs(followers.docs.map((d) => d.ref), { followedName: changes.name, followedAvatar: changes.avatar });
+    const sent = await getDocs(query(collection(db, 'notifications'), where('actorId', '==', uid)));
+    await updateRefs(sent.docs.map((d) => d.ref), { actorName: changes.name, actorAvatar: changes.avatar });
   }
 }
